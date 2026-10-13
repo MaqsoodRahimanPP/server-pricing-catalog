@@ -1,10 +1,5 @@
-services:
-  pricing-catalog:
-    ... (as before)
-  proxy:
-    image: nginx:alpine
-    container_name: nginx-proxy
-    volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf:ro
-    ports:
-      - "80:80"   # maps host 80 to proxy
+FROM nginx:alpine
+COPY index.html /usr/share/nginx/html/index.html
+COPY styles.css /usr/share/nginx/html/styles.css
+COPY app.js /usr/share/nginx/html/app.js
+EXPOSE 80
