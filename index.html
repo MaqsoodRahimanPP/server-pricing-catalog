@@ -1,882 +1,454 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="theme-color" content="#f8fafc">
-<title>CloudPilot — Cloud Architecture & FinOps</title>
-<style>
-:root {
-  --bg:#f7f8fa;
-  --surface:#fff;
-  --surface-alt:#f8fafc;
-  --text:#111827;
-  --muted:#64748b;
-  --border:#e5e7eb;
-  --accent:#635bff;
-  --accent-dark:#5145e5;
-  --green:#047857;
-  --green-bg:#ecfdf5;
-  --amber:#92400e;
-  --amber-bg:#fffbeb;
-  --red:#b91c1c;
-  --red-bg:#fef2f2;
-  --radius:16px;
-  --shadow:0 4px 20px rgba(15,23,42,.045);
-}
-*{box-sizing:border-box}
-html{scroll-behavior:smooth}
-body{
-  margin:0;background:var(--bg);color:var(--text);
-  font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
-  font-size:14px;line-height:1.6;
-}
-button,input,select{font:inherit}
-button{cursor:pointer}
-button:focus-visible,input:focus-visible,select:focus-visible{
-  outline:3px solid rgba(99,91,255,.25);outline-offset:2px
-}
-button:disabled{opacity:.5;cursor:not-allowed}
-a{color:var(--accent);text-decoration:none}
-a:hover{text-decoration:underline}
-.topbar{
-  height:68px;background:rgba(255,255,255,.94);
-  border-bottom:1px solid var(--border);
-  display:flex;align-items:center;justify-content:space-between;
-  padding:0 max(24px,calc((100vw - 1440px)/2));
-  position:sticky;top:0;z-index:20;backdrop-filter:blur(12px);
-}
-.brand{display:flex;align-items:center;gap:11px;font-size:19px;font-weight:800;letter-spacing:-.7px}
-.brand-icon{
-  width:36px;height:36px;display:grid;place-items:center;
-  background:#111827;color:white;border-radius:11px;font-size:19px;
-}
-.brand span:last-child{color:var(--accent)}
-.top-meta{display:flex;align-items:center;gap:14px;color:var(--muted);font-size:12px}
-.offline-pill{border:1px solid #bbf7d0;background:#f0fdf4;color:#166534;padding:5px 10px;border-radius:20px;font-weight:700}
-.layout{max-width:1440px;margin:auto;padding:34px 28px 60px}
-.hero{display:flex;justify-content:space-between;align-items:flex-end;gap:24px;margin-bottom:28px}
-.eyebrow{font-size:11px;text-transform:uppercase;letter-spacing:1.7px;color:var(--accent);font-weight:800}
-h1{font-size:clamp(27px,3vw,39px);line-height:1.16;letter-spacing:-1.5px;margin:9px 0 10px}
-.hero p{color:var(--muted);max-width:650px;margin:0;font-size:14px}
-.hero-stats{display:flex;gap:10px;flex-wrap:wrap}
-.stat{background:#fff;border:1px solid var(--border);padding:12px 16px;border-radius:12px;min-width:112px}
-.stat strong{display:block;font-size:17px;letter-spacing:-.5px}
-.stat small{color:var(--muted);font-size:11px}
-.mode-tabs{
-  display:flex;gap:4px;background:#eaeaf1;padding:4px;border-radius:12px;
-  width:fit-content;margin-bottom:22px;
-}
-.mode-tab{border:0;background:transparent;padding:10px 20px;border-radius:9px;color:#64748b;font-weight:700}
-.mode-tab.active{background:white;color:#111827;box-shadow:0 1px 4px #0000000c}
-.workspace{display:grid;grid-template-columns:340px minmax(0,1fr);gap:22px;align-items:start}
-.panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow)}
-.sidebar{padding:24px;position:sticky;top:88px}
-.panel-heading{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:7px}
-h2{font-size:18px;letter-spacing:-.5px;line-height:1.35;margin:0}
-h3{font-size:15px;letter-spacing:-.25px;margin:0}
-.muted{color:var(--muted)}
-.small{font-size:12px}
-.form-section{border-bottom:1px solid var(--border);padding:19px 0}
-.form-section:last-of-type{border-bottom:0}
-.section-kicker{font-size:10px;text-transform:uppercase;letter-spacing:1.1px;color:var(--muted);font-weight:800;margin-bottom:13px}
-.field{margin-bottom:15px}
-.field:last-child{margin-bottom:0}
-label{display:block;font-size:12px;font-weight:700;margin-bottom:6px}
-select,input[type=number],input[type=text]{
-  width:100%;padding:10px 12px;border:1px solid #dce1e9;border-radius:9px;
-  background:#fff;color:var(--text);min-height:42px;
-}
-select:focus,input:focus{border-color:var(--accent);outline:none}
-.help{font-size:11px;color:var(--muted);margin-top:5px}
-.checkline{display:flex;align-items:flex-start;gap:9px;margin:12px 0;color:#475569;font-size:12px}
-.checkline input{accent-color:var(--accent);margin-top:4px}
-.btn{
-  border:1px solid var(--border);border-radius:9px;padding:10px 14px;
-  font-weight:700;background:white;color:var(--text);transition:.2s;
-}
-.btn:hover{border-color:#a5b4fc;background:#f8f8ff}
-.btn-primary{background:#111827;color:white;border-color:#111827}
-.btn-primary:hover{background:#303849;color:white;border-color:#303849}
-.btn-accent{background:var(--accent);color:white;border-color:var(--accent)}
-.btn-accent:hover{background:var(--accent-dark);color:white}
-.btn-block{width:100%;margin-top:16px;padding:13px}
-.btn-row{display:flex;gap:8px;flex-wrap:wrap}
-.output{min-width:0}
-.results-top{display:flex;justify-content:space-between;align-items:center;gap:15px;margin-bottom:18px}
-.results-top p{margin:5px 0 0;color:var(--muted);font-size:12px}
-.results-actions{display:flex;gap:8px;flex-wrap:wrap}
-.recommendations{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px;margin-bottom:23px}
-.rec-card{position:relative;padding:19px 17px 17px;min-width:0}
-.rec-card.best{border:1.5px solid var(--accent);box-shadow:0 5px 24px rgba(99,91,255,.09)}
-.rec-badge{font-size:10px;font-weight:800;background:#eeecff;color:#4f46e5;padding:4px 8px;border-radius:6px;display:inline-block;margin-bottom:12px}
-.tier{font-size:10px;color:var(--muted);font-weight:800;text-transform:uppercase;letter-spacing:.9px}
-.provider-title{font-size:19px;font-weight:800;letter-spacing:-.7px;margin:5px 0}
-.rec-desc{font-size:11px;color:var(--muted);min-height:54px;margin-bottom:12px}
-.price{font-size:29px;font-weight:850;letter-spacing:-1.4px;line-height:1.3}
-.price small{font-size:12px;color:var(--muted);font-weight:500;letter-spacing:0}
-.price-note{font-size:10px;color:var(--muted);margin-top:4px}
-.card-divider{height:1px;background:var(--border);margin:15px 0}
-.feature-list{list-style:none;padding:0;margin:0 0 14px}
-.feature-list li{font-size:11px;margin:9px 0;display:flex;gap:7px;align-items:flex-start}
-.feature-list li::before{content:"✓";color:var(--green);font-weight:900}
-.card-foot{margin-top:auto}
-.card-foot .btn{width:100%;font-size:11px}
-.notice{border:1px solid #fde68a;background:#fffbeb;color:#854d0e;border-radius:10px;padding:12px 14px;font-size:11px;margin-bottom:22px}
-.section-panel{padding:23px;margin-bottom:19px}
-.section-title{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:18px}
-.section-title p{font-size:12px;color:var(--muted);margin:5px 0 0}
-.tag{background:var(--surface-alt);border:1px solid var(--border);padding:4px 8px;border-radius:6px;font-size:10px;color:#475569;font-weight:700;white-space:nowrap}
-.arch-flow{
-  display:flex;flex-wrap:wrap;justify-content:center;align-items:stretch;gap:8px;
-  background:#f8fafc;border:1px solid var(--border);border-radius:12px;padding:20px 12px;
-}
-.arch-node{
-  min-width:115px;max-width:160px;flex:1 1 115px;display:flex;flex-direction:column;
-  justify-content:center;align-items:center;text-align:center;padding:13px 9px;
-  border:1px solid #d9d7fe;background:white;border-radius:10px;font-weight:750;font-size:11px;
-}
-.arch-node .node-icon{font-size:19px;margin-bottom:5px}
-.arch-node small{font-weight:500;color:var(--muted);font-size:10px;margin-top:3px}
-.arch-node.edge{border-color:#bfdbfe;background:#eff6ff}
-.arch-node.compute{border-color:#bbf7d0;background:#f0fdf4}
-.arch-node.data{border-color:#fecaca;background:#fff1f2}
-.arch-node.security{border-color:#fde68a;background:#fffbeb}
-.arch-arrow{align-self:center;font-size:19px;color:#94a3b8}
-.arch-subtitle{font-size:11px;color:var(--muted);margin-top:12px}
-.arch-branches{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:12px}
-.branch{border:1px solid var(--border);border-radius:10px;padding:13px;background:white}
-.branch strong{display:block;font-size:11px;margin-bottom:5px}
-.branch span{font-size:11px;color:var(--muted)}
-.insights-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-bottom:19px}
-.insight{padding:21px}
-.insight h3{margin-bottom:13px}
-.insight ul{padding:0;list-style:none;margin:0}
-.insight li{padding:10px 0;border-top:1px solid var(--border);font-size:11px;color:#475569}
-.insight li strong{color:#111827}
-.insight li:first-child{border-top:0}
-.insight.cost{border-top:3px solid #10b981}
-.insight.security{border-top:3px solid #ef4444}
-.insight.connect{border-top:3px solid #635bff}
-.insight.db{border-top:3px solid #f59e0b}
-.connect-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
-.step{display:flex;gap:12px;border:1px solid var(--border);border-radius:10px;padding:13px}
-.step-num{flex:0 0 28px;height:28px;border-radius:8px;display:grid;place-items:center;background:#eeecff;color:#5145e5;font-weight:800}
-.step strong{font-size:12px;display:block}
-.step p{font-size:11px;color:var(--muted);margin:4px 0 0}
-.cost-table{width:100%;border-collapse:collapse;font-size:12px}
-.cost-table th,.cost-table td{text-align:left;padding:11px 9px;border-bottom:1px solid var(--border)}
-.cost-table th{font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);background:#f8fafc}
-.cost-table td:last-child,.cost-table th:last-child{text-align:right}
-.table-wrap{overflow-x:auto}
-.breakdown{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:15px}
-.breakdown div{padding:13px;background:#f8fafc;border:1px solid var(--border);border-radius:9px}
-.breakdown small{display:block;color:var(--muted);font-size:10px}
-.breakdown strong{font-size:16px}
-.catalog{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
-.catalog-item{padding:14px;border:1px solid var(--border);border-radius:10px}
-.catalog-item strong{font-size:12px;display:block}
-.catalog-item .category{font-size:10px;color:var(--accent);font-weight:800}
-.catalog-item p{font-size:11px;color:var(--muted);margin:6px 0}
-.catalog-item small{font-size:10px;color:#475569}
-.footer{text-align:center;padding:26px 0 0;color:var(--muted);font-size:11px}
-.empty-note{padding:24px;text-align:center;color:var(--muted)}
-.hidden{display:none!important}
-@media(max-width:1100px){
-  .workspace{grid-template-columns:300px minmax(0,1fr)}
-  .recommendations{grid-template-columns:1fr}
-  .rec-desc{min-height:0}
-  .catalog{grid-template-columns:repeat(2,minmax(0,1fr))}
-}
-@media(max-width:780px){
-  .topbar{padding:0 16px}
-  .top-meta .top-hint{display:none}
-  .layout{padding:24px 14px 40px}
-  .hero{align-items:flex-start;flex-direction:column}
-  .workspace{grid-template-columns:1fr}
-  .sidebar{position:static}
-  .recommendations{grid-template-columns:1fr}
-  .insights-grid,.connect-grid,.arch-branches{grid-template-columns:1fr}
-  .section-panel{padding:17px}
-  .results-top{align-items:flex-start;flex-direction:column}
-  .breakdown{grid-template-columns:1fr}
-  .catalog{grid-template-columns:1fr}
-  .arch-arrow{transform:rotate(90deg)}
-}
-@media print{
-  .topbar,.sidebar,.mode-tabs,.results-actions,.btn{display:none!important}
-  body{background:#fff}
-  .layout{max-width:none;padding:0}
-  .workspace{display:block}
-  .panel{box-shadow:none;break-inside:avoid}
-  .recommendations{grid-template-columns:repeat(3,1fr)}
-  .rec-card{break-inside:avoid}
-  .section-panel{break-inside:avoid}
-}
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#4f46e5">
+  <meta name="description" content="CloudPilot: Cloud infrastructure architecture planner, multi-cloud cost estimation, FinOps intelligence, and provider pricing catalog.">
+  <title>CloudPilot — Cloud Architecture & FinOps Intelligence</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="api.js" defer></script>
+  <script src="app.js" defer></script>
 </head>
 <body>
-<header class="topbar">
-  <div class="brand"><div class="brand-icon">⌘</div>Cloud<span> Pilot</span></div>
-  <div class="top-meta"><span class="top-hint">Architecture · FinOps · Infrastructure Planning</span><span class="offline-pill">● OFFLINE READY</span></div>
-</header>
 
-<main class="layout">
-  <section class="hero">
-    <div>
-      <div class="eyebrow">Infrastructure intelligence platform</div>
-      <h1>Build smarter. Spend less.<br>Architect with confidence.</h1>
-      <p>Design a secure cloud architecture, compare infrastructure providers, estimate monthly costs, and discover FinOps opportunities—all without an internet connection.</p>
+  <!-- Top Navigation Bar -->
+  <header class="topbar">
+    <div class="brand-wrapper">
+      <a class="brand" href="#" aria-label="CloudPilot Home">
+        <span class="brand-icon" aria-hidden="true">⌘</span>
+        <span>CloudPilot<span class="brand-dot">.</span></span>
+      </a>
     </div>
-    <div class="hero-stats">
-      <div class="stat"><strong>20+</strong><small>Provider options</small></div>
-      <div class="stat"><strong>3 tiers</strong><small>Budget to enterprise</small></div>
-      <div class="stat"><strong>100%</strong><small>Local calculations</small></div>
+
+    <nav class="top-nav" aria-label="Main Navigation">
+      <a href="#planner">Planner</a>
+      <a href="#topology">Topology</a>
+      <a href="#insights">FinOps Insights</a>
+      <a href="#costs">Cost Breakdown</a>
+      <a href="#saved-estimates">Saved Plans</a>
+      <a href="#catalog">Provider Catalog</a>
+    </nav>
+
+    <div class="top-meta">
+      <span class="top-hint">Architecture · FinOps · Sizing</span>
+      <span id="status-pill" class="status-pill offline" role="status" aria-live="polite">
+        <span class="status-dot offline"></span> OFFLINE READY
+      </span>
     </div>
-  </section>
+  </header>
 
-  <div class="mode-tabs" role="tablist" aria-label="Planning mode">
-    <button class="mode-tab active" id="tab-founder" role="tab" aria-selected="true" onclick="switchMode('founder')">✦ Founder Mode</button>
-    <button class="mode-tab" id="tab-developer" role="tab" aria-selected="false" onclick="switchMode('developer')">⌘ Developer Mode</button>
-  </div>
+  <!-- Main Content Layout -->
+  <main class="layout">
 
-  <div class="workspace">
-    <aside class="panel sidebar">
-      <div class="panel-heading"><h2>Project configuration</h2><span class="tag">STEP 01</span></div>
-      <p class="muted small">Tell us what you're building. The recommendation engine runs locally.</p>
-
-      <div id="founder-form">
-        <div class="form-section">
-          <div class="section-kicker">Business requirements</div>
-          <div class="field">
-            <label for="project-type">What are you building?</label>
-            <select id="project-type">
-              <option value="portfolio">Landing page / Blog / Portfolio</option>
-              <option value="ecommerce">E-commerce / Marketplace</option>
-              <option value="saas" selected>B2B SaaS application</option>
-              <option value="food">Food delivery / Real-time app</option>
-              <option value="pos">Cloud POS system</option>
-              <option value="media">Media / Video platform</option>
-              <option value="api">Backend API / Microservices</option>
-            </select>
-          </div>
-          <div class="field">
-            <label for="users">Expected monthly active users</label>
-            <select id="users">
-              <option value="1000">1,000 — Early MVP</option>
-              <option value="10000" selected>10,000 — Small startup</option>
-              <option value="100000">100,000 — Growing business</option>
-              <option value="500000">500,000+ — Large scale</option>
-            </select>
-          </div>
-          <div class="field">
-            <label for="traffic">Estimated monthly outbound traffic</label>
-            <select id="traffic">
-              <option value="100">100 GB — Low</option>
-              <option value="1000" selected>1 TB — Moderate</option>
-              <option value="5000">5 TB — High</option>
-              <option value="20000">20 TB — Very high</option>
-              <option value="50000">50 TB — Media scale</option>
-            </select>
-            <div class="help">Approximate application, API and media egress.</div>
-          </div>
-        </div>
+    <!-- Hero Header -->
+    <section class="hero">
+      <div class="hero-content">
+        <div class="eyebrow">Cloud Architecture Intelligence Platform</div>
+        <h1>Build smarter. Spend less.<br>Architect with confidence.</h1>
+        <p>Design a production-ready cloud architecture, compare infrastructure providers, estimate realistic monthly costs, and identify FinOps savings opportunities—all with local offline calculation and SQLite database persistence.</p>
       </div>
 
-      <div id="developer-form" class="hidden">
-        <div class="form-section">
-          <div class="section-kicker">Technical requirements</div>
-          <div class="field">
-            <label for="stack">Application / runtime</label>
-            <select id="stack">
-              <option value="nextjs">Next.js / SSR (Node.js)</option>
-              <option value="node" selected>Node.js / Express API</option>
-              <option value="python">Python / Django / FastAPI</option>
-              <option value="go">Go / Rust services</option>
-              <option value="php">PHP / Laravel / WordPress</option>
-              <option value="static">Static React / Vue + API</option>
-              <option value="docker">Multi-container Docker stack</option>
-            </select>
-          </div>
-          <div class="field">
-            <label for="database">Primary database</label>
-            <select id="database">
-              <option value="postgres">PostgreSQL</option>
-              <option value="mysql">MySQL / MariaDB</option>
-              <option value="mongo">MongoDB</option>
-              <option value="redis">Redis only / cache</option>
-              <option value="none">No persistent database</option>
-            </select>
-          </div>
-          <div class="field">
-            <label for="resources">Per-node compute requirements</label>
-            <select id="resources">
-              <option value="small">2 vCPU · 4 GB RAM</option>
-              <option value="medium" selected>4 vCPU · 8 GB RAM</option>
-              <option value="large">8 vCPU · 16 GB RAM</option>
-              <option value="xlarge">16+ vCPU · 32+ GB RAM</option>
-            </select>
-          </div>
-          <div class="field">
-            <label for="nodes">Application node count</label>
-            <select id="nodes">
-              <option value="1">1 node — Development / MVP</option>
-              <option value="2" selected>2 nodes — Redundancy</option>
-              <option value="3">3 nodes — Higher availability</option>
-              <option value="4">4 nodes — Larger workloads</option>
-            </select>
-          </div>
-          <div class="field">
-            <label for="region">Preferred deployment region</label>
-            <select id="region">
-              <option value="india" selected>India / South Asia</option>
-              <option value="europe">Europe</option>
-              <option value="us">North America</option>
-              <option value="global">Global / Multi-region</option>
-            </select>
-          </div>
+      <div class="hero-stats" aria-label="Platform Highlights">
+        <div class="stat">
+          <strong>20+</strong>
+          <small>Provider Options</small>
+        </div>
+        <div class="stat">
+          <strong>3 Tiers</strong>
+          <small>Budget to Enterprise</small>
+        </div>
+        <div class="stat">
+          <strong>100%</strong>
+          <small>Local Calculation</small>
         </div>
       </div>
-
-      <div class="form-section">
-        <div class="section-kicker">Operational preferences</div>
-        <div class="field">
-          <label for="budget">Maximum monthly budget (USD)</label>
-          <select id="budget">
-            <option value="25">$25 — Lean MVP</option>
-            <option value="75" selected>$75 — Small startup</option>
-            <option value="200">$200 — Growth stage</option>
-            <option value="500">$500 — Production scale</option>
-            <option value="2000">$2,000 — Enterprise</option>
-            <option value="10000">$10,000+ — Large workloads</option>
-          </select>
-        </div>
-        <div class="field">
-          <label for="ops">Infrastructure management preference</label>
-          <select id="ops">
-            <option value="self">Self-managed — More control, lower cost</option>
-            <option value="managed" selected>Managed — Less operational effort</option>
-            <option value="serverless">Serverless / PaaS — Minimal DevOps</option>
-          </select>
-        </div>
-        <div class="field">
-          <label for="availability">Availability target</label>
-          <select id="availability">
-            <option value="dev">Development / Best effort</option>
-            <option value="standard" selected>Production / Basic redundancy</option>
-            <option value="ha">High availability / Failover</option>
-          </select>
-        </div>
-        <label class="checkline"><input type="checkbox" id="compliance"> <span>Regulated workloads or strict compliance requirements</span></label>
-        <label class="checkline"><input type="checkbox" id="backup" checked> <span>Include a backup and recovery allowance</span></label>
-      </div>
-
-      <button class="btn btn-primary btn-block" onclick="generateArchitecture()">Generate architecture ↗</button>
-      <div class="btn-row" style="margin-top:10px">
-        <button class="btn" style="flex:1" onclick="resetForm()">Reset</button>
-        <button class="btn" style="flex:1" onclick="loadExample()">Load example</button>
-      </div>
-      <p class="help" style="margin-top:13px">All recommendations are illustrative planning estimates, not live provider quotes.</p>
-    </aside>
-
-    <section class="output">
-      <div class="results-top">
-        <div><div class="eyebrow">Your infrastructure plan</div><h2 style="font-size:23px;margin-top:4px" id="result-heading">Startup SaaS blueprint</h2><p id="result-summary">Configure your requirements to generate a personalized comparison.</p></div>
-        <div class="results-actions">
-          <button class="btn" onclick="exportJSON()">Export JSON</button>
-          <button class="btn" onclick="window.print()">Print / PDF</button>
-        </div>
-      </div>
-
-      <div id="recommendations" class="recommendations"></div>
-
-      <div class="notice"><strong>Pricing accuracy notice:</strong> Provider prices change by region, contract, CPU architecture, and billing model. Estimates below use editable, illustrative baseline assumptions embedded in this file. Validate current quotes, taxes, storage, snapshots, backups, support, and network transfer before purchasing. This portal makes no live API requests.</div>
-
-      <section class="panel section-panel">
-        <div class="section-title">
-          <div><h2>System architecture & network topology</h2><p id="architecture-caption">A proposed request flow and private data layer.</p></div>
-          <span class="tag">ARCHITECTURE</span>
-        </div>
-        <div id="architecture-map" class="arch-flow"></div>
-        <div id="architecture-branches" class="arch-branches"></div>
-        <p class="arch-subtitle">Logical reference architecture. Exact networking primitives differ between cloud providers. A single VPS does not automatically provide high availability, private subnets, or managed failover.</p>
-      </section>
-
-      <div class="insights-grid">
-        <section class="panel insight cost"><h3>↘ FinOps & networking savings</h3><ul id="cost-insights"></ul></section>
-        <section class="panel insight security"><h3>⚠ Security guardrails</h3><ul id="security-insights"></ul></section>
-        <section class="panel insight db"><h3>◉ Database optimization</h3><ul id="db-insights"></ul></section>
-        <section class="panel insight connect"><h3>⇢ How to connect the services</h3><ul id="connect-insights"></ul></section>
-      </div>
-
-      <section class="panel section-panel">
-        <div class="section-title"><div><h2>Estimated monthly cost breakdown</h2><p>Illustrative total cost of ownership for the recommended options.</p></div><span class="tag">FINOPS</span></div>
-        <div class="table-wrap">
-          <table class="cost-table">
-            <thead><tr><th>Cost component</th><th>Budget</th><th>Balanced</th><th>Enterprise</th></tr></thead>
-            <tbody id="cost-table-body"></tbody>
-          </table>
-        </div>
-        <div class="breakdown">
-          <div><small>Lowest estimated option</small><strong id="lowest-cost">$0/mo</strong></div>
-          <div><small>Recommended option</small><strong id="recommended-cost">$0/mo</strong></div>
-          <div><small>Highest estimated option</small><strong id="highest-cost">$0/mo</strong></div>
-        </div>
-        <p class="help" id="cost-disclaimer">Estimates exclude uncertain or usage-dependent charges unless specifically modeled.</p>
-      </section>
-
-      <section class="panel section-panel">
-        <div class="section-title"><div><h2>Provider intelligence catalog</h2><p>Local reference catalog covering hyperscalers, VPS, managed platforms and databases.</p></div><span class="tag">OFFLINE DATA</span></div>
-        <div class="field"><label for="catalog-filter">Filter providers</label><select id="catalog-filter" onchange="renderCatalog()"><option value="all">All provider categories</option><option value="hyperscaler">Hyperscalers</option><option value="vps">VPS / Bare metal</option><option value="paas">PaaS / Serverless</option><option value="database">Managed databases</option></select></div>
-        <div class="catalog" id="provider-catalog"></div>
-      </section>
-
-      <div class="footer">CloudPilot · Local-first cloud planning · No telemetry · No external API calls<br>Validate all architectural, security, availability, and pricing assumptions before production deployment.</div>
     </section>
-  </div>
-</main>
 
-<script>
-"use strict";
+    <!-- Planning Mode Switcher -->
+    <div class="mode-tabs" role="tablist" aria-label="Architecture Planning Mode">
+      <button
+        type="button"
+        class="mode-tab active"
+        id="tab-founder"
+        role="tab"
+        aria-selected="true"
+        aria-controls="founder-form"
+        onclick="switchMode('founder')"
+      >
+        ✦ Founder Mode
+      </button>
+      <button
+        type="button"
+        class="mode-tab"
+        id="tab-developer"
+        role="tab"
+        aria-selected="false"
+        aria-controls="developer-form"
+        onclick="switchMode('developer')"
+      >
+        ⌘ Developer Mode
+      </button>
+    </div>
 
-/*
- * CLOUDPILOT OFFLINE PROVIDER DATA
- * Pricing is illustrative and deliberately labeled as such.
- * Verify official regional pricing before committing to infrastructure.
- */
-const providerData = {
-  meta: {
-    currency: "USD",
-    updatedLabel: "Illustrative 2026 planning baseline",
-    sourcesToVerify: [
-      "https://aws.amazon.com/ec2/pricing/",
-      "https://aws.amazon.com/rds/postgresql/pricing/",
-      "https://cloud.google.com/products/calculator",
-      "https://azure.microsoft.com/pricing/calculator/",
-      "https://www.hetzner.com/cloud/",
-      "https://contabo.com/en/vps/",
-      "https://www.digitalocean.com/pricing",
-      "https://www.linode.com/pricing/",
-      "https://www.vultr.com/pricing/",
-      "https://www.ovhcloud.com/en/vps/",
-      "https://vercel.com/pricing",
-      "https://render.com/pricing",
-      "https://railway.com/pricing",
-      "https://fly.io/docs/about/pricing/",
-      "https://supabase.com/pricing",
-      "https://www.heroku.com/pricing",
-      "https://developers.cloudflare.com/r2/pricing/"
-    ]
-  },
-  providers: [
-    {id:"aws",name:"Amazon Web Services",category:"hyperscaler",tier:"Enterprise",price:45,desc:"Broad compute, networking, compliance and managed database services.",strength:"Compliance, service breadth, mature controls.",risk:"Egress, NAT gateways, observability and managed service costs.",egressRate:0.09,egressIncluded:100,managed:true,compliance:true,regionFit:["india","europe","us","global"],url:"https://aws.amazon.com/pricing/"},
-    {id:"gcp",name:"Google Cloud",category:"hyperscaler",tier:"Enterprise",price:48,desc:"Strong Kubernetes, analytics, networking and managed data services.",strength:"GKE, analytics and global infrastructure.",risk:"Egress and inter-zone transfer require modeling.",egressRate:0.12,egressIncluded:100,managed:true,compliance:true,regionFit:["india","europe","us","global"],url:"https://cloud.google.com/pricing"},
-    {id:"azure",name:"Microsoft Azure",category:"hyperscaler",tier:"Enterprise",price:50,desc:"Integrated cloud platform for enterprise identity and Microsoft workloads.",strength:"Entra ID, enterprise integration, hybrid cloud.",risk:"Network, licensing and managed services can add material costs.",egressRate:0.087,egressIncluded:100,managed:true,compliance:true,regionFit:["india","europe","us","global"],url:"https://azure.microsoft.com/pricing/"},
-    {id:"hetzner",name:"Hetzner Cloud",category:"vps",tier:"Ultra-Budget",price:6,desc:"Cost-effective virtual machines and generous included transfer in eligible locations.",strength:"Low base cost, predictable server pricing.",risk:"Region availability, support model, backups and HA require planning.",egressRate:0.01,egressIncluded:20480,managed:false,compliance:false,regionFit:["europe","us"],url:"https://www.hetzner.com/cloud/"},
-    {id:"contabo",name:"Contabo",category:"vps",tier:"Ultra-Budget",price:9,desc:"High-memory VPS plans suited to Docker and self-hosted services.",strength:"RAM-per-dollar and consolidated workloads.",risk:"Benchmark actual CPU performance, support, storage and network limits.",egressRate:0.01,egressIncluded:2048,managed:false,compliance:false,regionFit:["india","europe","us"],url:"https://contabo.com/en/vps/"},
-    {id:"digitalocean",name:"DigitalOcean",category:"vps",tier:"Balanced Value",price:24,desc:"Straightforward Droplets, managed databases, storage and App Platform.",strength:"Documentation, developer experience, understandable billing.",risk:"Managed databases and additional bandwidth add cost.",egressRate:0.01,egressIncluded:4096,managed:true,compliance:false,regionFit:["india","europe","us"],url:"https://www.digitalocean.com/pricing"},
-    {id:"linode",name:"Akamai Cloud (Linode)",category:"vps",tier:"Balanced Value",price:24,desc:"Virtual machines, object storage, managed databases and Kubernetes.",strength:"Predictable plans and broad developer tooling.",risk:"Region and transfer allowances vary by service.",egressRate:0.005,egressIncluded:4000,managed:true,compliance:false,regionFit:["india","europe","us"],url:"https://www.linode.com/pricing/"},
-    {id:"vultr",name:"Vultr",category:"vps",tier:"Balanced Value",price:24,desc:"Global cloud compute with multiple regions and deployment choices.",strength:"Geographic coverage and compute flexibility.",risk:"Bandwidth allowances and regional pricing must be checked.",egressRate:0.01,egressIncluded:3000,managed:false,compliance:false,regionFit:["india","europe","us","global"],url:"https://www.vultr.com/pricing/"},
-    {id:"ovh",name:"OVHcloud",category:"vps",tier:"Balanced Value",price:15,desc:"VPS and dedicated infrastructure with bandwidth-focused offerings.",strength:"Dedicated server options and European data sovereignty.",risk:"Plan-specific network policies, support and regional fit.",egressRate:0.01,egressIncluded:5000,managed:false,compliance:false,regionFit:["europe","us"],url:"https://www.ovhcloud.com/en/vps/"},
-    {id:"vercel",name:"Vercel",category:"paas",tier:"Developer Experience",price:20,desc:"Optimized deployment workflows for Next.js and frontend applications.",strength:"Git deployments, previews, edge delivery.",risk:"Commercial usage, compute and bandwidth can raise bills.",egressRate:0.15,egressIncluded:100,managed:true,compliance:false,regionFit:["india","europe","us","global"],url:"https://vercel.com/pricing"},
-    {id:"render",name:"Render",category:"paas",tier:"Balanced Value",price:35,desc:"Managed web services, workers, persistent storage and PostgreSQL.",strength:"Low operational overhead and simple deployments.",risk:"Service size, always-on compute, database and transfer charges.",egressRate:0.10,egressIncluded:100,managed:true,compliance:false,regionFit:["india","europe","us"],url:"https://render.com/pricing"},
-    {id:"railway",name:"Railway",category:"paas",tier:"Developer Experience",price:20,desc:"Usage-based app and database deployment with convenient project environments.",strength:"Fast setup, developer-oriented workflow.",risk:"Resource usage and outbound transfer require monitoring.",egressRate:0.05,egressIncluded:100,managed:true,compliance:false,regionFit:["india","europe","us"],url:"https://railway.com/pricing"},
-    {id:"fly",name:"Fly.io",category:"paas",tier:"Developer Experience",price:25,desc:"Regional application deployment close to users and data.",strength:"Geographic placement and container-based deployment.",risk:"Networking, storage, compute and regional redundancy costs.",egressRate:0.02,egressIncluded:100,managed:false,compliance:false,regionFit:["india","europe","us","global"],url:"https://fly.io/docs/about/pricing/"},
-    {id:"coolify",name:"Coolify + VPS",category:"paas",tier:"Self-hosted PaaS",price:9,desc:"Open-source deployment control plane for apps hosted on your own server.",strength:"Git-based deployment, Docker, control over infrastructure cost.",risk:"You own patching, backups, recovery, monitoring and security.",egressRate:0.01,egressIncluded:2048,managed:false,compliance:false,regionFit:["india","europe","us"],url:"https://coolify.io/"},
-    {id:"supabase",name:"Supabase",category:"database",tier:"Managed Database",price:25,desc:"Managed PostgreSQL with authentication, APIs, storage and realtime features.",strength:"Fast product development and integrated services.",risk:"Compute, storage, egress and usage-based limits vary by plan.",egressRate:0.09,egressIncluded:100,managed:true,compliance:false,regionFit:["india","europe","us"],url:"https://supabase.com/pricing"},
-    {id:"neon",name:"Neon PostgreSQL",category:"database",tier:"Serverless Database",price:19,desc:"Serverless PostgreSQL with scale-to-zero and branching capabilities.",strength:"Development environments, variable workloads and database branching.",risk:"Compute consumption, storage, transfer and availability tier matter.",egressRate:0.09,egressIncluded:100,managed:true,compliance:false,regionFit:["india","europe","us"],url:"https://neon.tech/pricing"},
-    {id:"rds",name:"AWS RDS PostgreSQL",category:"database",tier:"Managed Database",price:130,desc:"Managed PostgreSQL with backups, monitoring and optional Multi-AZ deployment.",strength:"Operational tooling and high-availability options.",risk:"Instance hours, storage, I/O, backups and Multi-AZ can dominate cost.",egressRate:0.09,egressIncluded:100,managed:true,compliance:true,regionFit:["india","europe","us","global"],url:"https://aws.amazon.com/rds/postgresql/pricing/"},
-    {id:"selfdb",name:"Self-hosted PostgreSQL",category:"database",tier:"Self-managed",price:0,desc:"PostgreSQL running on an existing VPS or private application node.",strength:"No separate managed database fee on an existing server.",risk:"Backup verification, patching, HA, storage and restore procedures are your responsibility.",egressRate:0.01,egressIncluded:2048,managed:false,compliance:false,regionFit:["india","europe","us"],url:"https://www.postgresql.org/docs/"}
-  ],
-  baseline: {
-    egress: {
-      awsRate:0.09,awsFreeGB:100,
-      hetznerIncludedGB:20480,
-      digitalOceanIncludedGB:4096,
-      note:"Transfer allowances and rates vary by service, location and contract."
-    },
-    nat: {monthly:32.40,perGB:0.045},
-    storage: {blockPerGB:0.10,objectPerGB:0.023,backupPerGB:0.05},
-    database: {
-      selfHosted:0,
-      serverless:19,
-      managed:40,
-      rdsSingleAZ:130,
-      rdsMultiAZ:260
-    }
-  }
-};
+    <!-- Workspace Grid -->
+    <div class="workspace">
 
-const $ = id => document.getElementById(id);
-let currentMode = "founder";
-let lastReport = null;
+      <!-- Configuration Sidebar -->
+      <aside class="panel sidebar" id="planner" aria-label="Project Configuration">
+        <div class="panel-heading">
+          <h2>Project configuration</h2>
+          <span class="tag">STEP 01</span>
+        </div>
+        <p class="muted small">Configure your workload profile. The recommendation engine evaluates infrastructure in real time.</p>
 
-const formatUSD = n => "$" + Math.round(Math.max(0,n)).toLocaleString("en-US");
-const formatExact = n => "$" + Math.max(0,n).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2});
-const escapeHTML = value => String(value).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-const unique = arr => [...new Set(arr)];
+        <!-- Founder Form -->
+        <div id="founder-form">
+          <div class="form-section">
+            <div class="section-kicker">Business requirements</div>
 
-function switchMode(mode){
-  currentMode=mode;
-  $("founder-form").classList.toggle("hidden",mode!=="founder");
-  $("developer-form").classList.toggle("hidden",mode!=="developer");
-  $("tab-founder").classList.toggle("active",mode==="founder");
-  $("tab-developer").classList.toggle("active",mode==="developer");
-  $("tab-founder").setAttribute("aria-selected",String(mode==="founder"));
-  $("tab-developer").setAttribute("aria-selected",String(mode==="developer"));
-  generateArchitecture();
-}
+            <div class="field">
+              <label for="project-type">What are you building?</label>
+              <select id="project-type" name="projectType">
+                <option value="portfolio">Landing page / Static portfolio / Blog</option>
+                <option value="ecommerce">E-commerce / Marketplace platform</option>
+                <option value="saas" selected>B2B SaaS application</option>
+                <option value="food">Food delivery / Real-time logistics app</option>
+                <option value="pos">Cloud POS / Retail terminal system</option>
+                <option value="media">Media streaming / Video platform</option>
+                <option value="api">Backend API / Microservices cluster</option>
+              </select>
+            </div>
 
-function getInputs(){
-  const developer=currentMode==="developer";
-  const users=developer?10000:Number($("users").value);
-  const resource=developer?$("resources").value:"";
-  const traffic=developer?Math.max(100,users*0.02):Number($("traffic").value);
-  const type=developer?mapStackToType($("stack").value):$("project-type").value;
-  const db=developer?$("database").value:defaultDB(type);
-  const nodes=developer?Number($("nodes").value):(users>=500000?4:users>=100000?3:users>=10000?2:1);
-  const availability=$("availability").value;
-  const compliance=$("compliance").checked;
-  const backup=$("backup").checked;
-  const ops=$("ops").value;
-  const budget=Number($("budget").value);
-  const stack=developer?$("stack").value:"";
-  const resources=developer?resource:(users>=500000?"xlarge":users>=100000?"large":users>=10000?"medium":"small");
-  const region=developer?$("region").value:"india";
-  return {developer,users,traffic,type,db,nodes,availability,compliance,backup,ops,budget,stack,resources,region};
-}
+            <div class="field">
+              <label for="users">Expected monthly active users</label>
+              <select id="users" name="users">
+                <option value="1000">1,000 — Early MVP / Internal</option>
+                <option value="10000" selected>10,000 — Small startup</option>
+                <option value="100000">100,000 — Growing business</option>
+                <option value="500000">500,000+ — Enterprise scale</option>
+              </select>
+            </div>
 
-function mapStackToType(stack){
-  if(stack==="static")return "portfolio";
-  if(stack==="nextjs")return "saas";
-  if(stack==="docker")return "api";
-  if(stack==="php")return "ecommerce";
-  return "saas";
-}
-function defaultDB(type){
-  if(type==="portfolio")return "none";
-  if(type==="food"||type==="pos")return "postgres";
-  if(type==="media")return "postgres";
-  return "postgres";
-}
+            <div class="field">
+              <label for="traffic">Estimated monthly outbound traffic</label>
+              <select id="traffic" name="traffic">
+                <option value="100">100 GB — Low egress</option>
+                <option value="1000" selected>1 TB — Moderate egress</option>
+                <option value="5000">5 TB — High egress</option>
+                <option value="20000">20 TB — Very high egress</option>
+                <option value="50000">50 TB — Media / Streaming scale</option>
+              </select>
+              <div class="help">Egress covers API responses, assets and media transfer.</div>
+            </div>
+          </div>
+        </div>
 
-function estimateCosts(input){
-  const high=input.users>=100000;
-  const enterprise=input.users>=500000||input.availability==="ha"||input.compliance;
-  const db=input.db;
-  const traffic=input.traffic;
-  const nodes=input.nodes;
-  const resourceFactor={small:1,medium:1.65,large:2.8,xlarge:4.8}[input.resources]||1.65;
-  const baseBudget={portfolio:5,ecommerce:12,saas:12,food:15,pos:12,media:20,api:10}[input.type]||12;
-  const computeBudget=Math.max(5,baseBudget*resourceFactor*Math.max(1,nodes*.72));
-  const databaseBudget=db==="none"?0:db==="redis"?8:db==="mongo"?25:db==="postgres"||db==="mysql"?providerData.baseline.database.selfHosted:0;
-  const dbServerless=db==="none"?0:db==="redis"?12:db==="mongo"?30:providerData.baseline.database.serverless;
-  const dbManaged=db==="none"?0:db==="redis"?25:db==="mongo"?55:providerData.baseline.database.managed;
-  const dbEnterprise=db==="none"?0:db==="redis"?45:db==="mongo"?90:input.availability==="ha"||enterprise?providerData.baseline.database.rdsMultiAZ:providerData.baseline.database.rdsSingleAZ;
-  const storage= Math.max(3,Math.round(input.users/10000)*2+8);
-  const backup=input.backup?Math.max(3,Math.round(input.users/10000)*2):0;
-  const cfEgress=0;
-  const awsEgress=Math.max(0,traffic-providerData.baseline.egress.awsFreeGB)*providerData.baseline.egress.awsRate;
-  const hetznerEgress=Math.max(0,traffic-providerData.baseline.egress.hetznerIncludedGB-traffic)*0;
-  const nat=input.ops==="self"?0:providerData.baseline.nat.monthly;
-  const awsNat=nat+traffic*providerData.baseline.nat.perGB;
-  const cloudflare=0;
-  const overhead=8+(input.availability==="ha"?20:0)+(input.compliance?35:0);
-  const budgetCost=computeBudget+databaseBudget+storage+backup+cloudflare;
-  const budgetAlt=computeBudget+dbServerless+storage+backup+8;
-  const budgetCostAdjusted=budgetCost;
-  const budgetTraffic=traffic>2048?Math.max(0,traffic-2048)*.01:0;
-  const budgetTotal=budgetCostAdjusted+budgetTraffic+(input.ops==="self"?0:0);
-  const valueCompute=Math.max(24,computeBudget*1.4);
-  const valueTotal=valueCompute+dbManaged+storage+backup+Math.max(0,traffic-4096)*.01+12;
-  const serverlessCompute=input.type==="portfolio"?0:Math.max(15,baseBudget*resourceFactor*1.3);
-  const serverlessTotal=serverlessCompute+dbServerless+storage+backup+Math.max(0,traffic-100)*.05+10;
-  const enterpriseCompute=Math.max(60,computeBudget*3.5+nodes*15);
-  const enterpriseTotal=enterpriseCompute+dbEnterprise+storage*1.5+backup+awsEgress+awsNat+overhead;
-  const actualBudgetTotal=input.ops==="serverless"?serverlessTotal:budgetTotal;
-  const budgetProvider=input.region==="europe"||input.region==="us"?"Hetzner + Coolify":"Contabo + Coolify";
-  const budgetRec={
-    id:"budget",tier:"Ultra-Budget",provider:budgetProvider,
-    monthly:Math.round(Math.max(8,actualBudgetTotal)),
-    description:"Self-managed VPS and Docker-based deployment. Best for cost-conscious projects with DevOps ownership.",
-    features:["VPS compute + Coolify deployment platform",db==="none"?"No persistent database required":"Self-hosted database allowance included",input.backup?"Backup allowance included":"Backups not included in estimate","Cloudflare CDN / DNS baseline"],
-    fit:!input.compliance&&input.ops==="self"&&input.users<100000,
-    components:{compute:Math.round(Math.max(5,computeBudget)),database:Math.round(databaseBudget),storage,backup,network:Math.round(budgetTraffic)}
-  };
-  const valueProvider=input.ops==="serverless"?"Render / Railway":input.type==="portfolio"?"Vercel":"DigitalOcean";
-  const valueRec={
-    id:"value",tier:"Balanced Value",provider:valueProvider,
-    monthly:Math.round(Math.max(20,input.ops==="serverless"?serverlessTotal:valueTotal)),
-    description:"Managed services and simpler operations with a predictable planning baseline.",
-    features:["Managed deployment or VPS services","Managed database allowance", "Included bandwidth assumptions", "Reduced routine infrastructure maintenance"],
-    fit:!input.compliance&&(input.ops==="managed"||input.ops==="serverless")&&input.users<500000,
-    components:{compute:Math.round(valueCompute),database:Math.round(dbManaged),storage,backup,network:Math.round(Math.max(0,traffic-4096)*.01)}
-  };
-  const enterpriseRec={
-    id:"enterprise",tier:"Enterprise",provider:input.compliance?"AWS / Azure":"AWS ECS + RDS",
-    monthly:Math.round(Math.max(180,enterpriseTotal)),
-    description:"Cloud-native compute, managed database options, network controls and scaling primitives.",
-    features:["Load balancing and scalable compute","Managed database / HA allowance","Network, logs and monitoring allowance","Compliance-oriented architecture options"],
-    fit:input.compliance||input.availability==="ha"||input.users>=500000,
-    components:{compute:Math.round(enterpriseCompute),database:Math.round(dbEnterprise),storage:Math.round(storage*1.5),backup,network:Math.round(awsEgress+awsNat)}
-  };
-  if(input.compliance){
-    budgetRec.monthly+=35;valueRec.monthly+=35;
-    budgetRec.fit=false;valueRec.fit=false;enterpriseRec.fit=true;
-  }
-  if(input.availability==="ha"){
-    budgetRec.monthly+=25;valueRec.monthly+=20;
-    budgetRec.features.push("Single VPS does not guarantee high availability");
-  }
-  if(input.users>=100000){
-    budgetRec.monthly+=Math.round(computeBudget*.5);
-    valueRec.monthly+=Math.round(valueCompute*.25);
-  }
-  if(input.ops==="serverless"){
-    budgetRec.description="Self-hosting remains possible, but a managed PaaS may reduce operational effort.";
-    budgetRec.fit=false;
-    valueRec.fit=true;
-  }
-  if(input.region==="india"){
-    budgetRec.description+=" Confirm that your chosen provider has a suitable India/Asia region; some budget options require deployment abroad.";
-    valueRec.features.push("Verify regional latency and data-residency requirements");
-  }
-  if(input.db==="none"){
-    for(const rec of [budgetRec,valueRec,enterpriseRec]){
-      rec.components.database=0;
-      rec.monthly=Math.max(0,rec.monthly);
-    }
-  }
-  let recs=[budgetRec,valueRec,enterpriseRec];
-  if(input.budget<50&&!input.compliance){
-    recs[0].fit=true;recs[1].fit=false;
-  }else if(input.users>=100000||input.compliance||input.availability==="ha"){
-    recs[2].fit=true;
-  }else if(input.ops==="managed"||input.ops==="serverless"){
-    recs[1].fit=true;
-  }else{
-    recs[0].fit=true;
-  }
-  recs.forEach(r=>r.fitScore=(r.fit?1:0));
-  if(!recs.some(r=>r.fit))recs[1].fit=true;
-  return {recs,traffic,awsEgress,awsNat,storage,backup,resourceFactor};
-}
+        <!-- Developer Form -->
+        <div id="developer-form" class="hidden">
+          <div class="form-section">
+            <div class="section-kicker">Technical requirements</div>
 
-function architectureNodes(input){
-  const nodes=[
-    {icon:"👤",title:"Users",sub:"Web / Mobile",type:""},
-    {icon:"🌐",title:"Cloudflare CDN",sub:"DNS · TLS · Cache",type:"edge"},
-    {icon:"🛡️",title:"WAF / Access",sub:"Rules · Rate limits",type:"security"}
-  ];
-  if(input.type!=="portfolio")nodes.push({icon:"⚖️",title:"Load balancer",sub:input.nodes>1?"Distribute requests":"Optional for single node",type:"edge"});
-  nodes.push({icon:"⚙️",title:input.ops==="serverless"?"Managed app runtime":"App servers",sub:input.nodes+" node(s) · "+input.stackLabel,type:"compute"});
-  if(input.db==="postgres"||input.db==="mysql")nodes.push({icon:"🔄",title:"PgBouncer / Pool",sub:"PostgreSQL connection pooling",type:"security"});
-  if(input.db!=="none")nodes.push({icon:"🗄️",title:input.db==="postgres"?"Private PostgreSQL":input.db==="mysql"?"Private MySQL":input.db==="mongo"?"Private MongoDB":"Redis",sub:input.availability==="ha"?"HA / failover planned":"Private network only",type:"data"});
-  if(input.type==="food"||input.type==="pos"||input.type==="saas")nodes.push({icon:"⚡",title:"Redis / Queue",sub:"Cache · Sessions · Jobs",type:"data"});
-  return nodes;
-}
+            <div class="field">
+              <label for="stack">Application runtime & framework</label>
+              <select id="stack" name="stack">
+                <option value="nextjs">Next.js / SSR (Node.js)</option>
+                <option value="node" selected>Node.js / Express API</option>
+                <option value="python">Python / FastAPI / Django</option>
+                <option value="go">Go / Rust Microservices</option>
+                <option value="php">PHP / Laravel / WordPress</option>
+                <option value="static">Static SPA (React/Vue) + Headless API</option>
+                <option value="docker">Multi-container Docker Compose stack</option>
+              </select>
+            </div>
 
-function renderArchitecture(input){
-  const nodes=architectureNodes(input);
-  $("architecture-map").innerHTML=nodes.map((node,i)=>
-    (i?'<div class="arch-arrow" aria-hidden="true">→</div>':'')+
-    '<div class="arch-node '+node.type+'"><span class="node-icon">'+node.icon+'</span>'+
-    escapeHTML(node.title)+'<small>'+escapeHTML(node.sub)+'</small></div>'
-  ).join("");
-  $("architecture-caption").textContent=input.availability==="ha"
-    ?"High-availability design intent; redundancy, failover and recovery must be implemented and tested."
-    :"Proposed request path based on the selected workload.";
-  const branches=[
-    {title:"Private data network",text:"Database and cache have no public ingress. Permit connections only from approved application identities or security groups."},
-    {title:"Operations & recovery",text:"Centralize logs and metrics, store secrets outside source control, schedule encrypted backups and test restoration."}
-  ];
-  if(input.availability==="ha")branches[0].text="Use multiple failure domains, health checks, redundant application nodes and a database failover strategy.";
-  if(input.compliance)branches[1].text="Add identity governance, audit logging, encryption, evidence collection and region-specific compliance review.";
-  $("architecture-branches").innerHTML=branches.map(b=>'<div class="branch"><strong>'+escapeHTML(b.title)+'</strong><span>'+escapeHTML(b.text)+'</span></div>').join("");
-}
+            <div class="field">
+              <label for="database">Primary database engine</label>
+              <select id="database" name="database">
+                <option value="postgres">PostgreSQL</option>
+                <option value="mysql">MySQL / MariaDB</option>
+                <option value="mongo">MongoDB</option>
+                <option value="redis">Redis in-memory store</option>
+                <option value="none">No persistent database</option>
+              </select>
+            </div>
 
-function insightsFor(input,costs){
-  const cost=[
-    "<strong>CDN first:</strong> Cache static assets and cacheable responses at the edge. Measure cache-hit ratio before estimating origin bandwidth savings.",
-    "<strong>Model outbound traffic:</strong> At an illustrative AWS rate of $0.09/GB after a 100 GB allowance, 1 TB of billable transfer would be about $92.70. Actual rates vary by region and service.",
-    "<strong>Avoid unnecessary NAT charges:</strong> On AWS, use appropriate VPC gateway endpoints for S3 and DynamoDB traffic when eligible. They can avoid NAT processing and transfer charges for those paths.",
-    "<strong>Consider Cloudflare R2:</strong> Object-storage egress to the public internet has no direct egress charge under R2's published pricing model, but storage, operations, caching and other service charges still apply.",
-    "<strong>Co-locate services:</strong> Use the same region and appropriate private network to reduce cross-region and cross-zone transfer. Not all internal traffic is free."
-  ];
-  if(input.traffic>4096)cost.unshift("<strong>High-egress workload:</strong> Compare included transfer allowances, object storage delivery and CDN economics. Do not assume a VPS unlimited-traffic label guarantees unlimited throughput.");
-  if(input.ops==="self")cost.push("<strong>Self-hosting trade-off:</strong> Coolify has no mandatory platform subscription for its open-source self-hosted edition, but compute, backups, monitoring and engineering time are not free.");
-  const security=[
-    "<strong>Never expose database ports:</strong> Do not make PostgreSQL 5432, MySQL 3306 or MongoDB 27017 publicly accessible. Use private networking and restrictive source rules.",
-    "<strong>Zero Trust access:</strong> Consider Cloudflare Tunnel for supported private application access. Keep admin interfaces protected with strong authentication and least privilege.",
-    "<strong>Secrets:</strong> Keep credentials and encryption keys out of Git. Rotate secrets, restrict access and use a secret manager or protected deployment variables.",
-    "<strong>Recovery:</strong> Encrypt backups, keep an independent recovery copy and regularly test restore procedures.",
-    "<strong>Identity and patching:</strong> Use MFA, minimal IAM permissions, timely security updates, firewall defaults and centralized audit logs."
-  ];
-  if(input.compliance)security.unshift("<strong>Compliance gate:</strong> Validate applicable standards, region/data-residency requirements, audit evidence, contractual terms and provider attestations. A provider name alone does not make an architecture compliant.");
-  const db=[];
-  if(input.db==="postgres")db.push("<strong>Use PgBouncer:</strong> Transaction pooling can reduce backend connection pressure and memory consumption. Validate prepared statements, session state and application compatibility.");
-  if(input.db==="postgres"||input.db==="mysql"||input.db==="mongo")db.push("<strong>Protect the database:</strong> Set connection limits, indexes, query timeouts, backup retention and storage alerts. Benchmark with representative traffic.");
-  if(input.db==="none")db.push("<strong>No database selected:</strong> Add durable storage only if the application needs persistent user, transaction or business data.");
-  if(input.db==="redis")db.push("<strong>Redis:</strong> Decide whether it is disposable cache or durable state. Configure memory limits, eviction policies and persistence according to its role.");
-  db.push("<strong>Choose managed vs self-hosted:</strong> Managed databases cost more but shift portions of patching, backups and operational work to the provider. Verify exact service responsibilities.");
-  db.push("<strong>HA is not a checkbox:</strong> Test failover, replication lag, point-in-time recovery and restore time against your recovery objectives.");
-  const connect=[
-    "<strong>1. DNS and TLS:</strong> Point your domain to the chosen edge or application endpoint and configure certificates.",
-    "<strong>2. Deploy the app:</strong> Connect GitHub CI/CD to a managed platform or a secured self-hosted deployment runner.",
-    "<strong>3. Configure private access:</strong> Put the database on a private network and allow connections only from application workloads.",
-    "<strong>4. Set environment variables:</strong> Configure database URLs, pool sizes and secrets through the deployment platform—not committed files.",
-    "<strong>5. Verify operations:</strong> Add health checks, logs, uptime alerts, backups and a tested rollback procedure."
-  ];
-  if(input.ops==="serverless")connect[1]="<strong>2. Deploy the app:</strong> Connect GitHub to the chosen PaaS. Check build minutes, execution limits, sleep behavior and outbound bandwidth.";
-  return {cost,security,db,connect};
-}
+            <div class="field">
+              <label for="resources">Per-node compute specification</label>
+              <select id="resources" name="resources">
+                <option value="small">2 vCPU · 4 GB RAM</option>
+                <option value="medium" selected>4 vCPU · 8 GB RAM</option>
+                <option value="large">8 vCPU · 16 GB RAM</option>
+                <option value="xlarge">16+ vCPU · 32+ GB RAM</option>
+              </select>
+            </div>
 
-function renderList(id,items){
-  $(id).innerHTML=items.map(item=>'<li>'+item+'</li>').join("");
-}
+            <div class="field">
+              <label for="nodes">Application node count</label>
+              <select id="nodes" name="nodes">
+                <option value="1">1 node — Development / MVP</option>
+                <option value="2" selected>2 nodes — Basic redundancy</option>
+                <option value="3">3 nodes — Higher availability</option>
+                <option value="4">4 nodes — Large scaled workload</option>
+              </select>
+            </div>
 
-function renderRecommendations(input,estimate){
-  const recs=estimate.recs;
-  $("recommendations").innerHTML=recs.map(rec=>`
-    <article class="panel rec-card ${rec.fit?"best":""}">
-      ${rec.fit?'<span class="rec-badge">✦ BEST FIT</span>':'<span class="tier">${escapeHTML(rec.tier)}</span>'}
-      ${rec.fit?'':'<div style="height:28px"></div>'}
-      <div class="tier">${escapeHTML(rec.tier)}</div>
-      <div class="provider-title">${escapeHTML(rec.provider)}</div>
-      <div class="rec-desc">${escapeHTML(rec.description)}</div>
-      <div class="price">${formatUSD(rec.monthly)}<small> /mo</small></div>
-      <div class="price-note">Planning estimate · USD</div>
-      <div class="card-divider"></div>
-      <ul class="feature-list">${rec.features.map(f=>'<li>'+escapeHTML(f)+'</li>').join("")}</ul>
-      <div class="card-foot"><button class="btn ${rec.fit?"btn-accent":""}" onclick="selectRecommendation('${rec.id}')">${rec.fit?"Selected recommendation":"View cost details"}</button></div>
-    </article>`).join("");
-}
+            <div class="field">
+              <label for="region">Primary deployment region</label>
+              <select id="region" name="region">
+                <option value="india" selected>India / South Asia</option>
+                <option value="europe">Europe</option>
+                <option value="us">North America</option>
+                <option value="global">Global Multi-region</option>
+              </select>
+            </div>
+          </div>
+        </div>
 
-function renderCosts(input,estimate){
-  const recs=estimate.recs;
-  const rows=[
-    ["Application compute",r=>r.components.compute],
-    ["Database",r=>r.components.database],
-    ["Storage allowance",r=>r.components.storage],
-    ["Backup allowance",r=>r.components.backup],
-    ["Estimated network charges",r=>r.components.network],
-    ["Estimated monthly total",r=>r.monthly]
-  ];
-  $("cost-table-body").innerHTML=rows.map((row,i)=>'<tr'+(i===rows.length-1?' style="font-weight:800;background:#f8fafc"':'')+'><td>'+row[0]+'</td>'+recs.map(r=>'<td>'+formatUSD(row[1](r))+'</td>').join("")+'</tr>').join("");
-  const prices=recs.map(r=>r.monthly);
-  $("lowest-cost").textContent=formatUSD(Math.min(...prices))+"/mo";
-  $("recommended-cost").textContent=formatUSD((recs.find(r=>r.fit)||recs[1]).monthly)+"/mo";
-  $("highest-cost").textContent=formatUSD(Math.max(...prices))+"/mo";
-  $("cost-disclaimer").textContent="Budget: "+formatUSD(recs[0].monthly)+". Balanced: "+formatUSD(recs[1].monthly)+". Enterprise: "+formatUSD(recs[2].monthly)+". Estimates exclude engineering labor, taxes, currency conversion, support contracts, variable database I/O, snapshots beyond the allowance, and some provider-specific charges.";
-}
+        <!-- Shared Operational Preferences -->
+        <div class="form-section">
+          <div class="section-kicker">Operational preferences</div>
 
-function selectRecommendation(id){
-  if(!lastReport)return;
-  const rec=lastReport.estimate.recs.find(r=>r.id===id);
-  if(!rec)return;
-  $("result-heading").textContent=rec.provider+" — cost details";
-  $("result-summary").textContent="Estimated "+formatUSD(rec.monthly)+"/month. "+rec.description;
-  $("cost-disclaimer").textContent="Selected option: "+rec.provider+". Monthly estimates are not quotes and require official regional price validation.";
-  $("result-heading").scrollIntoView({behavior:"smooth",block:"center"});
-}
+          <div class="field">
+            <label for="budget">Monthly infrastructure budget ceiling</label>
+            <select id="budget" name="budget">
+              <option value="25">$25 — Lean MVP</option>
+              <option value="75" selected>$75 — Small startup</option>
+              <option value="200">$200 — Growth stage</option>
+              <option value="500">$500 — Production scale</option>
+              <option value="2000">$2,000 — Mid-market enterprise</option>
+              <option value="10000">$10,000+ — Large enterprise</option>
+            </select>
+          </div>
 
-function renderCatalog(){
-  const filter=$("catalog-filter").value;
-  const list=providerData.providers.filter(p=>filter==="all"||p.category===filter);
-  $("provider-catalog").innerHTML=list.map(p=>`
-    <article class="catalog-item">
-      <span class="category">${escapeHTML(p.category.toUpperCase())}</span>
-      <strong>${escapeHTML(p.name)}</strong>
-      <p>${escapeHTML(p.desc)}</p>
-      <small>Baseline from ${formatUSD(p.price)}/mo · ${escapeHTML(p.tier)}</small>
-      <p><strong>Strength:</strong> ${escapeHTML(p.strength)}</p>
-      <p><strong>Watch:</strong> ${escapeHTML(p.risk)}</p>
-      <a href="${escapeHTML(p.url)}" target="_blank" rel="noopener noreferrer">Official pricing / docs ↗</a>
-    </article>`).join("");
-}
+          <div class="field">
+            <label for="ops">Management preference</label>
+            <select id="ops" name="ops">
+              <option value="self">Self-managed VPS — Full control, lower hosting fee</option>
+              <option value="managed" selected>Managed services — Lower operational overhead</option>
+              <option value="serverless">Serverless / PaaS — Minimal DevOps maintenance</option>
+            </select>
+          </div>
 
-function generateArchitecture(){
-  const input=getInputs();
-  input.stackLabel=input.developer?input.stack:"business workload";
-  const estimate=estimateCosts(input);
-  lastReport={input,estimate,generatedAt:new Date().toISOString()};
-  const projectNames={portfolio:"Portfolio / static website",ecommerce:"E-commerce architecture",saas:"SaaS application architecture",food:"Food delivery architecture",pos:"Cloud POS architecture",media:"Media platform architecture",api:"Backend API architecture"};
-  $("result-heading").textContent=projectNames[input.type]||"Cloud infrastructure blueprint";
-  $("result-summary").textContent=input.users.toLocaleString("en-US")+" estimated monthly active users · "+input.nodes+" app node(s) · "+input.region.toUpperCase()+" · "+(input.compliance?"Compliance review required":input.availability==="ha"?"High availability target":input.ops==="self"?"Self-managed preference":"Managed operations preference");
-  renderRecommendations(input,estimate);
-  renderArchitecture(input);
-  const insights=insightsFor(input,estimate);
-  renderList("cost-insights",insights.cost);
-  renderList("security-insights",insights.security);
-  renderList("db-insights",insights.db);
-  renderList("connect-insights",insights.connect);
-  renderCosts(input,estimate);
-}
+          <div class="field">
+            <label for="availability">Availability & resilience target</label>
+            <select id="availability" name="availability">
+              <option value="dev">Development / Non-critical</option>
+              <option value="standard" selected>Production / Standard redundancy</option>
+              <option value="ha">High Availability (HA) / Automated failover</option>
+            </select>
+          </div>
 
-function resetForm(){
-  $("project-type").value="saas";
-  $("users").value="10000";
-  $("traffic").value="1000";
-  $("stack").value="node";
-  $("database").value="postgres";
-  $("resources").value="medium";
-  $("nodes").value="2";
-  $("region").value="india";
-  $("budget").value="75";
-  $("ops").value="managed";
-  $("availability").value="standard";
-  $("compliance").checked=false;
-  $("backup").checked=true;
-  $("catalog-filter").value="all";
-  switchMode("founder");
-  generateArchitecture();
-}
+          <label class="checkline" for="compliance">
+            <input type="checkbox" id="compliance" name="compliance">
+            <span>Regulated workloads or strict compliance requirements (SOC 2, ISO, HIPAA)</span>
+          </label>
 
-function loadExample(){
-  $("project-type").value="food";
-  $("users").value="100000";
-  $("traffic").value="5000";
-  $("budget").value="200";
-  $("ops").value="managed";
-  $("availability").value="ha";
-  $("compliance").checked=false;
-  $("backup").checked=true;
-  switchMode("founder");
-  generateArchitecture();
-}
+          <label class="checkline" for="backup">
+            <input type="checkbox" id="backup" name="backup" checked>
+            <span>Include automated backup and recovery allowance</span>
+          </label>
+        </div>
 
-function exportJSON(){
-  if(!lastReport)generateArchitecture();
-  const data={
-    product:"CloudPilot",
-    estimateType:"Illustrative planning estimate; not a live quote",
-    providerDataVersion:providerData.meta.updatedLabel,
-    generatedAt:lastReport.generatedAt,
-    inputs:lastReport.input,
-    recommendations:lastReport.estimate.recs,
-    assumptions:{
-      currency:"USD",
-      livePricing:false,
-      awsIllustrativeEgressPerGB:providerData.baseline.egress.awsRate,
-      awsIllustrativeFreeEgressGB:providerData.baseline.egress.awsFreeGB,
-      awsIllustrativeNATMonthly:providerData.baseline.nat.monthly,
-      awsIllustrativeNATProcessingPerGB:providerData.baseline.nat.perGB,
-      exclusions:["Taxes","Engineering labor","Exact regional rates","Variable I/O","Provider-specific support and storage fees"]
-    },
-    officialPricingReferences:providerData.meta.sourcesToVerify
-  };
-  const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement("a");
-  a.href=url;a.download="cloudpilot-architecture-estimate.json";
-  document.body.appendChild(a);a.click();a.remove();
-  URL.revokeObjectURL(url);
-}
+        <!-- Sidebar Form Actions -->
+        <button
+          type="button"
+          class="btn btn-primary btn-block"
+          id="generate-btn"
+          onclick="generateArchitecture()"
+        >
+          Generate architecture ↗
+        </button>
 
-// Initialize with a usable plan immediately.
-generateArchitecture();
-renderCatalog();
-</script>
+        <div class="btn-row" style="margin-top: 10px;">
+          <button type="button" class="btn" id="reset-btn" onclick="resetForm()">Reset</button>
+          <button type="button" class="btn" id="example-btn" onclick="loadExample()">Load example</button>
+        </div>
+
+        <p class="help" style="margin-top: 14px;">Recommendations are illustrative infrastructure sizing models, not live commercial quotes.</p>
+      </aside>
+
+      <!-- Main Output Area -->
+      <section class="output" aria-label="Architecture Results & Recommendations">
+
+        <!-- Results Header & Actions -->
+        <div class="results-top">
+          <div class="results-info">
+            <div class="eyebrow">Your Infrastructure Plan</div>
+            <h2 id="result-heading">Startup SaaS Blueprint</h2>
+            <p id="result-summary">Configure your requirements in the sidebar to generate a customized architecture plan.</p>
+            <p id="save-estimate-status" class="save-status hidden" role="status" aria-live="polite"></p>
+          </div>
+
+          <div class="results-actions">
+            <button
+              type="button"
+              class="btn btn-primary"
+              id="save-estimate-button"
+              onclick="saveCurrentEstimate()"
+            >
+              Save estimate to database
+            </button>
+            <button type="button" class="btn" onclick="exportJSON()">Export JSON</button>
+            <button type="button" class="btn" onclick="window.print()">Print / PDF</button>
+          </div>
+        </div>
+
+        <!-- Recommendations Grid -->
+        <div id="recommendations" class="recommendations" aria-live="polite"></div>
+
+        <!-- Pricing Disclaimer Banner -->
+        <div class="notice">
+          <strong>Pricing accuracy notice:</strong> Cloud provider pricing varies by geographic region, operating system, network egress tiers, and commitment discounts. Estimates displayed use illustrative baseline pricing assumptions. Always verify current quotes, taxes, storage snapshots, backups, support tiers, and egress policies directly with providers before purchasing.
+        </div>
+
+        <!-- Architecture & Topology Section -->
+        <section class="panel section-panel" id="topology">
+          <div class="section-title">
+            <div>
+              <h2>System architecture & network topology</h2>
+              <p id="architecture-caption">Proposed request flow and isolated persistence layer.</p>
+            </div>
+            <span class="tag">ARCHITECTURE</span>
+          </div>
+
+          <div id="architecture-map" class="arch-flow" aria-label="Architecture topology diagram"></div>
+
+          <div id="architecture-branches" class="arch-branches"></div>
+
+          <p class="arch-subtitle">Logical reference architecture. Exact networking primitives differ between cloud providers. Single VPS setups do not provide automated multi-zone failover, private VPC subnets, or managed backups out of the box.</p>
+        </section>
+
+        <!-- FinOps & Infrastructure Insights Grid -->
+        <div class="insights-grid" id="insights">
+          <section class="panel insight cost">
+            <h3>↘ FinOps & networking savings</h3>
+            <ul id="cost-insights"></ul>
+          </section>
+
+          <section class="panel insight security">
+            <h3>⚠ Security guardrails</h3>
+            <ul id="security-insights"></ul>
+          </section>
+
+          <section class="panel insight db">
+            <h3>◉ Database optimization</h3>
+            <ul id="db-insights"></ul>
+          </section>
+
+          <section class="panel insight connect">
+            <h3>⇢ How to connect the services</h3>
+            <ul id="connect-insights"></ul>
+          </section>
+        </div>
+
+        <!-- Estimated Cost Breakdown Table -->
+        <section class="panel section-panel" id="costs">
+          <div class="section-title">
+            <div>
+              <h2>Estimated monthly cost breakdown</h2>
+              <p>Illustrative total cost of ownership (TCO) across tiers.</p>
+            </div>
+            <span class="tag">FINOPS</span>
+          </div>
+
+          <div class="table-wrap">
+            <table class="cost-table" aria-label="Monthly infrastructure cost comparison table">
+              <thead>
+                <tr>
+                  <th scope="col">Cost Component</th>
+                  <th scope="col">Budget Tier</th>
+                  <th scope="col">Balanced Tier</th>
+                  <th scope="col">Enterprise Tier</th>
+                </tr>
+              </thead>
+              <tbody id="cost-table-body"></tbody>
+            </table>
+          </div>
+
+          <div class="breakdown">
+            <div>
+              <small>Lowest estimated option</small>
+              <strong id="lowest-cost">$0/mo</strong>
+            </div>
+            <div>
+              <small>Recommended option</small>
+              <strong id="recommended-cost" class="text-accent">$0/mo</strong>
+            </div>
+            <div>
+              <small>Highest estimated option</small>
+              <strong id="highest-cost">$0/mo</strong>
+            </div>
+          </div>
+
+          <p class="help" id="cost-disclaimer" style="margin-top: 14px;">Estimates exclude uncertain usage-dependent charges unless explicitly modeled.</p>
+        </section>
+
+        <!-- Saved Architecture Estimates (SQLite Database) -->
+        <section class="panel section-panel saved-estimates-section" id="saved-estimates">
+          <div class="section-title">
+            <div>
+              <h2>Saved architecture estimates (SQLite)</h2>
+              <p>Persistent estimates retrieved from the backend API database.</p>
+            </div>
+            <div style="display: flex; gap: 8px; align-items: center;">
+              <span class="tag" id="saved-estimates-count">0</span>
+              <button type="button" class="btn small" id="refresh-saved-btn" style="min-height: 28px; padding: 4px 10px; font-size: 11px;">Refresh ↻</button>
+            </div>
+          </div>
+
+          <div id="saved-estimates-container">
+            <div class="saved-estimates-empty">
+              <p>Loading saved estimates from database…</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- Provider Intelligence Catalog -->
+        <section class="panel section-panel" id="catalog">
+          <div class="section-title">
+            <div>
+              <h2>Provider intelligence catalog</h2>
+              <p>Local reference catalog enriched with verified plans from the API backend.</p>
+            </div>
+            <span class="tag">OFFLINE CATALOG</span>
+          </div>
+
+          <div class="catalog-toolbar">
+            <div class="catalog-filter-field">
+              <label for="catalog-filter">Category filter</label>
+              <select id="catalog-filter">
+                <option value="all">All provider categories</option>
+                <option value="hyperscaler">Hyperscalers</option>
+                <option value="vps">VPS / Bare metal</option>
+                <option value="paas">PaaS / Serverless</option>
+                <option value="database">Managed databases</option>
+              </select>
+            </div>
+
+            <div class="catalog-search-field">
+              <label for="catalog-search">Search providers & services</label>
+              <input
+                type="search"
+                id="catalog-search"
+                placeholder="Search by provider, strength, risk or tier..."
+                aria-label="Search cloud providers"
+              >
+            </div>
+          </div>
+
+          <div class="catalog" id="provider-catalog" aria-live="polite"></div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="footer">
+          <p><strong>CloudPilot</strong> · Local-first Cloud Architecture Planning & Sizing · API-backed SQLite Persistence with Offline Fallback</p>
+          <p class="small muted" style="margin-top: 4px;">Validate all architectural, security, regional compliance, and pricing assumptions on official provider documentation before production deployment.</p>
+        </footer>
+
+      </section>
+    </div>
+  </main>
+
 </body>
 </html>
