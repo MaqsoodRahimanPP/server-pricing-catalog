@@ -4,8 +4,35 @@ const express = require("express");
 const router = express.Router();
 const db = require("../db");
 const { PROVIDER_CATALOG } = require("../services/catalogData");
+const {
+  getSyncStatus,
+  getWeeklyChanges,
+  triggerSyncNow
+} = require("../services/pricingSyncService");
+
+// GET /api/providers/sync-status
+router.get("/sync-status", (req, res) => {
+  res.json({
+    success: true,
+    data: getSyncStatus()
+  });
+});
+
+// POST /api/providers/sync-now
+router.post("/sync-now", (req, res) => {
+  const result = triggerSyncNow();
+  res.json(result);
+});
+
+// GET /api/providers/weekly-changes
+router.get("/weekly-changes", (req, res) => {
+  const { filter } = req.query;
+  const result = getWeeklyChanges(filter);
+  res.json(result);
+});
 
 // GET /api/providers
+
 router.get("/", (req, res) => {
   const {
     category,

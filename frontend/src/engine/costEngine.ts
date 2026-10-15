@@ -22,74 +22,136 @@ export function calculateClientCosts(params: {
   natGatewayCount?: number;
   monitoringLevel?: string;
   currency?: Currency;
+  introComputeUSD?: number;
+  renewalComputeUSD?: number;
 }): CostEstimate {
   const {
-    providerId = "aws",
-    providerName = "Amazon Web Services",
-    category = "hyperscaler",
+    providerId = "hostinger",
+    providerName = "Hostinger Cloud & KVM",
+    category = params.category || (params.providerId === "aws" || params.providerId === "gcp" || params.providerId === "azure" ? "hyperscaler" : "vps"),
     instances = 2,
-    unitComputeUSD = 14.60,
+    unitComputeUSD = 8.99,
     dbType = "postgres",
-    dbHosting = "managed",
+    dbHosting = "self",
     storageGB = 100,
     dataTransferGB = 1000,
     cdnRequired = true,
     backupRequired = true,
     natGatewayCount = 0,
     monitoringLevel = "standard",
-    currency = "USD"
+    currency = "USD",
+    introComputeUSD,
+    renewalComputeUSD
   } = params;
 
   // 1. Compute
-  const computeMonthlyUSD = Number((instances * unitComputeUSD).toFixed(2));
+  const activeComputeUnit = introComputeUSD !== undefined ? introComputeUSD : unitComputeUSD;
+  const computeMonthlyUSD = Number((instances * activeComputeUnit).toFixed(2));
 
   // 2. Database
   let databaseMonthlyUSD = 0;
   if (dbType !== "none" && dbHosting !== "none") {
     if (dbHosting === "self") {
-      databaseMonthlyUSD = providerId === "hetzner" ? 4.50 : 15.00;
+      databaseMonthlyUSD =
+        providerId === "hetzner" ? 4.5 : providerId === "hostinger" ? 0.0 : 15.0;
     } else if (dbHosting === "serverless") {
-      databaseMonthlyUSD = 19.00;
+      databaseMonthlyUSD = 19.0;
     } else {
-      databaseMonthlyUSD = category === "hyperscaler" ? 130.00 : 30.00;
+      databaseMonthlyUSD = category === "hyperscaler" ? 130.0 : 30.0;
     }
   }
 
   // 3. Storage
-  const storageMonthlyUSD = Number((storageGB * 0.08).toFixed(2));
+  const storageMonthlyUSD =
+    providerId === "hostinger" ? 0.0 : Number((storageGB * 0.08).toFixed(2));
 
   // 4. Transfer / Egress
-  const includedGB = providerId === "hetzner" ? 20480 : providerId === "contabo" ? 32768 : 100;
-  const egressRate = providerId === "hetzner" ? 0.001 : providerId === "contabo" ? 0.001 : 0.09;
+  const includedGB =
+    providerId === "hetzner"
+      ? 20480
+      : providerId === "contabo"
+      ? 32768
+      : providerId === "hostinger"
+      ? 8192
+      : 100;
+  const egressRate =
+    providerId === "hetzner" || providerId === "contabo"
+      ? 0.001
+      : providerId === "hostinger"
+      ? 0.0001
+      : 0.09;
   const billableGB = Math.max(0, dataTransferGB - includedGB);
   const transferMonthlyUSD = Number((billableGB * egressRate).toFixed(2));
 
   // 5. Networking
-  const cdnMonthlyUSD = cdnRequired ? (dataTransferGB > 5000 ? 20.00 : 0.00) : 0.00;
+  const cdnMonthlyUSD = cdnRequired ? (dataTransferGB > 5000 ? 20.0 : 0.0) : 0.0;
   const natMonthlyUSD = Number((natGatewayCount * 32.85).toFixed(2));
-  const lbMonthlyUSD = instances > 1 ? (category === "hyperscaler" ? 22.00 : 12.00) : 0.00;
-  const networkingMonthlyUSD = Number((cdnMonthlyUSD + natMonthlyUSD + lbMonthlyUSD).toFixed(2));
+  const lbMonthlyUSD =
+    instances > 1
+      ? category === "hyperscaler"
+        ? 22.0
+        : providerId === "hostinger" || providerId === "contabo"
+        ? 0.0
+        : 12.0
+      : 0.0;
+  const networkingMonthlyUSD = Number(
+    (cdnMonthlyUSD + natMonthlyUSD + lbMonthlyUSD).toFixed(2)
+  );
 
   // 6. Backup & Monitoring
-  const backupMonthlyUSD = backupRequired ? Number((storageGB * 0.05 + 5.00).toFixed(2)) : 0.00;
+  const backupMonthlyUSD = backupRequired
+    ? providerId === "hostinger"
+      ? 0.0 // Hostinger includes automated weekly backups
+      : Number((storageGB * 0.05 + 5.0).toFixed(2))
+    : 0.0;
   const monitoringMonthlyUSD =
-    monitoringLevel === "advanced" ? 25.00 : monitoringLevel === "standard" ? 10.00 : 0.00;
+    monitoringLevel === "advanced"
+      ? 25.0
+      : monitoringLevel === "standard"
+      ? 10.0
+      : 0.0;
 
   const fixedMonthlyUSD = Number(
-    (computeMonthlyUSD + databaseMonthlyUSD + lbMonthlyUSD + natMonthlyUSD + monitoringMonthlyUSD).toFixed(2)
+    (
+      computeMonthlyUSD +
+      databaseMonthlyUSD +
+      lbMonthlyUSD +
+      natMonthlyUSD +
+      monitoringMonthlyUSD
+    ).toFixed(2)
   );
   const usageMonthlyUSD = Number(
-    (storageMonthlyUSD + transferMonthlyUSD + backupMonthlyUSD + cdnMonthlyUSD).toFixed(2)
+    (
+      storageMonthlyUSD +
+      transferMonthlyUSD +
+      backupMonthlyUSD +
+      cdnMonthlyUSD
+    ).toFixed(2)
   );
 
   const totalMonthlyUSD = Number((fixedMonthlyUSD + usageMonthlyUSD).toFixed(2));
   const annualProjectedUSD = Number((totalMonthlyUSD * 12).toFixed(2));
 
-  const lowUSD = Number((fixedMonthlyUSD + usageMonthlyUSD * 0.75).toFixed(2));
-  const highUSD = Number((fixedMonthlyUSD + usageMonthlyUSD * 1.50).toFixed(2));
+  // TCO Calculations
+  const renewalComputeRate = renewalComputeUSD !== undefined ? renewalComputeUSD : activeComputeUnit * 1.5;
+  const renewalMonthlyUSD = Number(
+    (instances * renewalComputeRate + databaseMonthlyUSD + usageMonthlyUSD).toFixed(2)
+  );
+  const tco1YearUSD = annualProjectedUSD;
+  const tco3YearUSD = Number((totalMonthlyUSD * 12 + renewalMonthlyUSD * 24).toFixed(2));
+
+  const lowUSD = usageMonthlyUSD > 0
+    ? Number((fixedMonthlyUSD + usageMonthlyUSD * 0.75).toFixed(2))
+    : Number((totalMonthlyUSD * 0.85).toFixed(2));
+
+  const highUSD = usageMonthlyUSD > 0
+    ? Number((fixedMonthlyUSD + usageMonthlyUSD * 1.5).toFixed(2))
+    : Number((totalMonthlyUSD * 1.25).toFixed(2));
+
 
   const fxRate = CURRENCY_RATES[currency] || 1.0;
   const toCurr = (val: number) => Number((val * fxRate).toFixed(2));
+  const sym = currency === "INR" ? "₹" : currency === "EUR" ? "€" : currency === "GBP" ? "£" : "$";
 
   const costDrivers = [
     { name: "Compute Instances", amountUSD: computeMonthlyUSD, category: "Compute" },
@@ -99,21 +161,43 @@ export function calculateClientCosts(params: {
     { name: "Networking (ALB/NAT)", amountUSD: networkingMonthlyUSD, category: "Network" },
     { name: "Backups & Monitoring", amountUSD: backupMonthlyUSD + monitoringMonthlyUSD, category: "Operations" }
   ]
-    .filter(i => i.amountUSD > 0)
-    .sort((a, b) => b.amountUSD - a.amountUSD)
-    .map(i => ({
-      ...i,
-      amountFormatted: `${currency} ${toCurr(i.amountUSD).toLocaleString()}`,
-      percentage: totalMonthlyUSD > 0 ? Number(((i.amountUSD / totalMonthlyUSD) * 100).toFixed(1)) : 0
+    .filter(d => d.amountUSD > 0)
+    .map(d => ({
+      ...d,
+      amountFormatted: `${sym}${toCurr(d.amountUSD).toLocaleString()}`,
+      percentage: totalMonthlyUSD > 0 ? Math.round((d.amountUSD / totalMonthlyUSD) * 100) : 0
     }));
+
+  const optimizations = [
+    {
+      area: "Edge CDN Caching",
+      action: "Route dynamic and static cache hits through Cloudflare Edge to eliminate origin bandwidth.",
+      estimatedSavingsUSD: Math.round(dataTransferGB * 0.05)
+    },
+    {
+      area: "Connection Multiplexing",
+      action: "Use PgBouncer transaction pooling to run smaller database compute with 10x connection density.",
+      estimatedSavingsUSD: 40
+    },
+    {
+      area: "Object Storage Egress",
+      action: "Use Cloudflare R2 ($0/GB egress) instead of AWS S3 ($0.09/GB) for media uploads.",
+      estimatedSavingsUSD: Math.round(storageGB * 0.07)
+    }
+  ];
 
   return {
     provider: {
       id: providerId,
       name: providerName,
       category,
-      tier: "Standard",
-      officialUrl: "https://aws.amazon.com/pricing/",
+      tier: providerId === "hostinger" ? "Smart NVMe Value" : "Cloud Tier",
+      officialUrl:
+        providerId === "hostinger"
+          ? "https://www.hostinger.com/vps-hosting"
+          : providerId === "aws"
+          ? "https://aws.amazon.com/pricing/"
+          : "https://www.digitalocean.com/pricing",
       lastVerifiedDate: "2026-10-15"
     },
     currency,
@@ -131,29 +215,29 @@ export function calculateClientCosts(params: {
     usageMonthlyUSD,
     totalMonthlyUSD,
     annualProjectedUSD,
+    tco1YearUSD,
+    tco3YearUSD,
+    tco1YearFormatted: `${sym}${toCurr(tco1YearUSD).toLocaleString()}`,
+    tco3YearFormatted: `${sym}${toCurr(tco3YearUSD).toLocaleString()}`,
     scenarios: {
       lowUSD,
       expectedUSD: totalMonthlyUSD,
       highUSD
     },
     formatted: {
-      totalMonthly: `${currency} ${toCurr(totalMonthlyUSD).toLocaleString()}`,
-      annualProjected: `${currency} ${toCurr(annualProjectedUSD).toLocaleString()}`,
-      lowScenario: `${currency} ${toCurr(lowUSD).toLocaleString()}`,
-      highScenario: `${currency} ${toCurr(highUSD).toLocaleString()}`
+      totalMonthly: `${sym}${toCurr(totalMonthlyUSD).toLocaleString()}`,
+      annualProjected: `${sym}${toCurr(annualProjectedUSD).toLocaleString()}`,
+      lowScenario: `${sym}${toCurr(lowUSD).toLocaleString()}`,
+      highScenario: `${sym}${toCurr(highUSD).toLocaleString()}`
     },
     costDrivers,
-    optimizations: [
-      {
-        area: "Edge Caching",
-        action: "Use Cloudflare edge caching for static assets to reduce origin egress.",
-        estimatedSavingsUSD: Math.round(transferMonthlyUSD * 0.7)
-      }
-    ],
+    optimizations,
     assumptions: [
-      `Calculated for ${instances} compute instance(s) running 730 hours/month`,
-      "Pricing reflects standard 2026 on-demand rates without reserved commitments",
-      "Usage-based network and storage estimates depend on actual client traffic"
+      `Compute sizing based on ${instances} instance(s) running 24/7.`,
+      providerId === "hostinger"
+        ? "Hostinger Gen4 NVMe disk, unmetered network port, automated weekly backups, and Kodee AI included."
+        : "Standard on-demand pricing with public ingress free.",
+      `Data transfer includes ${includedGB >= 1000 ? `${includedGB / 1024} TB` : `${includedGB} GB`} free baseline bandwidth.`
     ]
   };
 }

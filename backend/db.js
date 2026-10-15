@@ -244,4 +244,90 @@ if (!migration1Applied) {
   runMigration();
 }
 
+// Migration 2: Seed Hostinger KVM & Cloud Plans
+const migration2Applied = db
+  .prepare("SELECT 1 FROM schema_migrations WHERE version = 2")
+  .get();
+
+if (!migration2Applied) {
+  const hostingerPlans = [
+    [
+      "Hostinger", "Hostinger KVM 1", "Mumbai, Singapore, EU, US",
+      "1 vCPU", "4 GiB", "50 GiB NVMe",
+      "4 TB included (300 Mb/s)", 6.49,
+      "https://www.hostinger.com/vps-hosting",
+      "verified"
+    ],
+    [
+      "Hostinger", "Hostinger KVM 2 (Popular)", "Mumbai, Singapore, EU, US",
+      "2 vCPU", "8 GiB", "100 GiB NVMe",
+      "8 TB included (300 Mb/s)", 8.99,
+      "https://www.hostinger.com/vps-hosting",
+      "verified"
+    ],
+    [
+      "Hostinger", "Hostinger KVM 4 (Scale)", "Mumbai, Singapore, EU, US",
+      "4 vCPU", "16 GiB", "200 GiB NVMe",
+      "16 TB included (300 Mb/s)", 12.99,
+      "https://www.hostinger.com/vps-hosting",
+      "verified"
+    ],
+    [
+      "Hostinger", "Hostinger KVM 8 (Powerhouse)", "Mumbai, Singapore, EU, US",
+      "8 vCPU", "32 GiB", "400 GiB NVMe",
+      "32 TB included (300 Mb/s)", 25.99,
+      "https://www.hostinger.com/vps-hosting",
+      "verified"
+    ],
+    [
+      "Hostinger", "Cloud Startup (Managed hPanel)", "Global / Multi-region",
+      "2 vCPU", "3 GiB", "200 GiB NVMe",
+      "Unlimited unmetered", 9.99,
+      "https://www.hostinger.com/cloud-hosting",
+      "verified"
+    ],
+    [
+      "Hostinger", "Cloud Professional", "Global / Multi-region",
+      "4 vCPU", "6 GiB", "250 GiB NVMe",
+      "Unlimited unmetered", 14.99,
+      "https://www.hostinger.com/cloud-hosting",
+      "verified"
+    ],
+    [
+      "Hostinger", "Cloud Enterprise", "Global / Multi-region",
+      "6 vCPU", "12 GiB", "300 GiB NVMe",
+      "Unlimited unmetered", 29.99,
+      "https://www.hostinger.com/cloud-hosting",
+      "verified"
+    ]
+  ];
+
+  const insertPlan = db.prepare(`
+    INSERT INTO provider_plans
+      (provider, plan_name, region, vcpu, ram, storage,
+       bandwidth, monthly_usd, pricing_url, pricing_status)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `);
+
+  const runMigration2 = db.transaction(() => {
+    for (const plan of hostingerPlans) {
+      const existing = db
+        .prepare("SELECT id FROM provider_plans WHERE provider = ? AND plan_name = ?")
+        .get(plan[0], plan[1]);
+
+      if (!existing) {
+        insertPlan.run(...plan);
+      }
+    }
+
+    db.prepare(`
+      INSERT INTO schema_migrations (version, name)
+      VALUES (2, 'seed_hostinger_kvm_cloud_catalog')
+    `).run();
+  });
+
+  runMigration2();
+}
+
 module.exports = db;
+

@@ -7,7 +7,9 @@ import {
   Sliders,
   DollarSign,
   Layers,
-  ArrowRight
+  ArrowRight,
+  Sparkles,
+  Terminal
 } from "lucide-react";
 import {
   Requirements,
@@ -15,7 +17,8 @@ import {
   RecommendationTier,
   ArchitectureGraph,
   ArchitectureNode,
-  CostEstimate
+  CostEstimate,
+  TierId
 } from "../../types";
 import { FounderModeForm } from "./FounderModeForm";
 import { DevOpsModeForm } from "./DevOpsModeForm";
@@ -30,8 +33,8 @@ interface ArchitectureDesignerProps {
   planningMode: PlanningMode;
   onModeChange: (mode: PlanningMode) => void;
   recommendations: RecommendationTier[];
-  selectedTierId: "budget" | "balanced" | "enterprise";
-  onSelectTier: (tierId: "budget" | "balanced" | "enterprise") => void;
+  selectedTierId: TierId;
+  onSelectTier: (tierId: TierId) => void;
   architecture: ArchitectureGraph;
   costEstimate: CostEstimate;
   onRegenerate: () => void;
@@ -106,14 +109,20 @@ export const ArchitectureDesigner: React.FC<ArchitectureDesignerProps> = ({
             <h1 className="text-xl sm:text-2xl font-extrabold text-white tracking-tight">
               {requirements.projectName || "Cloud Infrastructure Blueprint"}
             </h1>
-            <span className="px-2 py-0.5 rounded text-[11px] font-bold uppercase bg-indigo-500/20 text-indigo-400 border border-indigo-500/30">
+            <span
+              className={`px-2.5 py-0.5 rounded text-[11px] font-bold uppercase border ${
+                selectedTierId === "hostinger"
+                  ? "bg-violet-500/20 text-violet-300 border-violet-500/40"
+                  : "bg-indigo-500/20 text-indigo-400 border-indigo-500/30"
+              }`}
+            >
               {selectedTierId} tier
             </span>
           </div>
           <p className="text-xs text-slate-400">
-            {requirements.users.toLocaleString()} MAU · {requirements.nodes} app instance(s) ·{" "}
+            {requirements.users.toLocaleString()} MAU · {requirements.nodes} instance(s) ·{" "}
             {requirements.region.toUpperCase()} ·{" "}
-            {requirements.availability === "ha" ? "High Availability" : "Standard SLA"} ·{" "}
+            {requirements.availability === "ha" ? "High Availability (Multi-AZ)" : "Standard SLA"} ·{" "}
             {requirements.database.toUpperCase()}
           </p>
         </div>
@@ -140,52 +149,93 @@ export const ArchitectureDesigner: React.FC<ArchitectureDesignerProps> = ({
             type="button"
             onClick={onSaveProject}
             disabled={isSaving}
-            className="px-3.5 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold flex items-center space-x-1.5 shadow-md shadow-indigo-600/30 transition-all active:scale-95 disabled:opacity-50"
+            className="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold flex items-center space-x-1.5 shadow-md shadow-indigo-600/30 transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
           >
             <Save className="w-4 h-4" />
-            <span>{isSaving ? "Saving…" : "Save Project"}</span>
+            <span>{isSaving ? "Saving…" : "Save Blueprint"}</span>
           </button>
 
           <button
             type="button"
             onClick={onExport}
-            className="px-3.5 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-semibold flex items-center space-x-1.5 transition-all"
+            className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-semibold flex items-center space-x-1.5 transition-all cursor-pointer"
           >
             <FileText className="w-4 h-4" />
-            <span>Export Report & Diagram</span>
+            <span>1-Click Exporter</span>
           </button>
         </div>
       </div>
 
-      {/* Main Grid: Left Form (1 col) + Right Architecture & Recommendations (2 cols) */}
+      {/* 4-Tier Recommendations Grid */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center space-x-1.5">
+            <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
+            <span>Multi-Provider Tier Comparison (All Products, All Plans)</span>
+          </span>
+          <span className="text-[11px] text-slate-500 hidden sm:inline">
+            Contabo Ultra-Budget · Hostinger Smart NVMe · DigitalOcean · AWS Enterprise
+          </span>
+        </div>
+
+        <RecommendationCards
+          tiers={recommendations}
+          selectedTierId={selectedTierId}
+          onSelectTier={onSelectTier}
+          currency={requirements.currency || "USD"}
+          onCurrencyChange={c => onUpdateRequirements({ currency: c })}
+        />
+      </div>
+
+      {/* Main Grid: Left Form (1 col) + Right Architecture Canvas (2 cols) */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Left Column: Requirements Wizard */}
+        {/* Left Column: Requirements Wizard (Founder vs DevOps) */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
-              Workload Inputs
+              Workload Persona
             </span>
-            <div className="flex items-center space-x-1 text-xs">
-              <button
-                type="button"
-                onClick={() => onModeChange("founder")}
-                className={`px-2 py-0.5 rounded text-[11px] font-semibold ${
-                  planningMode === "founder" ? "bg-indigo-600 text-white" : "text-slate-400"
-                }`}
-              >
-                Founder
-              </button>
-              <button
-                type="button"
-                onClick={() => onModeChange("devops")}
-                className={`px-2 py-0.5 rounded text-[11px] font-semibold ${
-                  planningMode === "devops" ? "bg-indigo-600 text-white" : "text-slate-400"
-                }`}
-              >
-                DevOps
-              </button>
+            <div className="flex items-center bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs">
+              <div className="relative group">
+                <button
+                  type="button"
+                  onClick={() => onModeChange("founder")}
+                  className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                    planningMode === "founder"
+                      ? "bg-indigo-600 text-white shadow-sm"
+                      : "text-slate-400 hover:text-white"
+                  }`}
+                >
+                  <Sparkles className={`w-3 h-3 ${planningMode === "founder" ? "text-amber-300" : "text-slate-400"}`} />
+                  <span>Founder Mode</span>
+                </button>
+                <div className="absolute top-full right-0 mt-1.5 w-52 p-2 rounded-lg bg-slate-900 text-slate-200 text-[10px] border border-slate-700 shadow-xl opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity z-40 leading-normal">
+                  <span className="font-bold text-indigo-400 block mb-0.5">Founder Wizard</span>
+                  High-level TCO & business metrics: simple sliders for MAU, traffic, and monthly run-rate.
+                </div>
+              </div>
+
+              <div className="relative group">
+                <button
+                  type="button"
+                  onClick={() => onModeChange("devops")}
+                  className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                    planningMode === "devops"
+                      ? "bg-indigo-600 text-white shadow-sm"
+                      : "text-slate-400 hover:text-white"
+                  }`}
+                >
+                  <Terminal className={`w-3 h-3 ${planningMode === "devops" ? "text-emerald-300" : "text-slate-400"}`} />
+                  <span>DevOps Mode</span>
+                </button>
+                <div className="absolute top-full right-0 mt-1.5 w-52 p-2 rounded-lg bg-slate-900 text-slate-200 text-[10px] border border-slate-700 shadow-xl opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity z-40 leading-normal">
+                  <span className="font-bold text-emerald-400 block mb-0.5">DevOps Architect</span>
+                  Granular infrastructure specs: vCPU/RAM, read/write ratios, IOPS, and network isolation.
+                </div>
+              </div>
             </div>
           </div>
+
 
           {planningMode === "founder" ? (
             <FounderModeForm
@@ -212,12 +262,12 @@ export const ArchitectureDesigner: React.FC<ArchitectureDesignerProps> = ({
               </span>
             </div>
             <p className="text-[11px] text-slate-400">
-              Includes {requirements.nodes} app node(s), {costEstimate.provider.name} database, and edge CDN.
+              Includes {requirements.nodes} app node(s), {costEstimate.provider.name} persistence, and edge CDN.
             </p>
             <button
               type="button"
               onClick={() => onNavigateToTab("calculator")}
-              className="w-full py-1.5 px-3 rounded-lg bg-slate-800 hover:bg-slate-700 text-indigo-400 text-xs font-semibold flex items-center justify-center space-x-1.5 transition-colors"
+              className="w-full py-2 px-3 rounded-lg bg-slate-800 hover:bg-slate-700 text-indigo-400 text-xs font-semibold flex items-center justify-center space-x-1.5 transition-colors cursor-pointer"
             >
               <DollarSign className="w-3.5 h-3.5" />
               <span>Open Detailed Cost Calculator →</span>
@@ -225,63 +275,43 @@ export const ArchitectureDesigner: React.FC<ArchitectureDesignerProps> = ({
           </div>
         </div>
 
-        {/* Right Column: 3-Tier Recommendations & React Flow Canvas */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Section 1: 3-Tier Recommendations */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
-                Architecture Recommendation Tiers
-              </span>
-              <span className="text-[11px] text-slate-500">
-                Compare 3 transparent options tailored to your constraints
+        {/* Right Column: Interactive React Flow Architecture Canvas */}
+        <div className="lg:col-span-2 space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <Layers className="w-4 h-4 text-indigo-400" />
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-300">
+                Zero-Lag Reactive Topology & Live Traffic
               </span>
             </div>
-
-            <RecommendationCards
-              tiers={recommendations}
-              selectedTierId={selectedTierId}
-              onSelectTier={onSelectTier}
-            />
+            <span className="text-xs text-indigo-400 font-medium">
+              {architecture.nodes.length} Active Nodes · Real-time RPS & Latency
+            </span>
           </div>
 
-          {/* Section 2: Interactive React Flow Architecture Canvas */}
-          <div className="space-y-3 pt-2">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <Layers className="w-4 h-4 text-indigo-400" />
-                <span className="text-xs font-bold uppercase tracking-wider text-slate-300">
-                  Interactive Architecture Topology
-                </span>
-              </div>
-              <span className="text-xs text-indigo-400 font-medium">
-                {architecture.nodes.length} Active Nodes
-              </span>
-            </div>
-
-            <ArchitectureCanvas
-              nodes={architecture.nodes}
-              edges={architecture.edges}
-              boundaries={architecture.boundaries}
-              selectedNodeId={selectedNode ? selectedNode.id : null}
-              onSelectNode={setSelectedNode}
-              onOpenAddComponent={() => setIsAddModalOpen(true)}
-              onRegenerate={onRegenerate}
-              onExportDiagram={onExport}
-            />
-
-            {/* Selected Node Inspector Drawer / Card */}
-            {selectedNode && (
-              <ComponentInspector
-                node={selectedNode}
-                onClose={() => setSelectedNode(null)}
-                onUpdateNode={handleUpdateNode}
-                onRemoveNode={handleRemoveNode}
-              />
-            )}
-          </div>
+          <ArchitectureCanvas
+            nodes={architecture.nodes}
+            edges={architecture.edges}
+            boundaries={architecture.boundaries}
+            selectedNodeId={selectedNode ? selectedNode.id : null}
+            onSelectNode={node => setSelectedNode(node)}
+            onOpenAddComponent={() => setIsAddModalOpen(true)}
+            onRegenerate={onRegenerate}
+            onExportDiagram={onExport}
+            selectedTierId={selectedTierId}
+          />
         </div>
       </div>
+
+      {/* Slide-over Glassmorphic Component Inspector Drawer */}
+      {selectedNode && (
+        <ComponentInspector
+          node={selectedNode}
+          onClose={() => setSelectedNode(null)}
+          onUpdateNode={handleUpdateNode}
+          onRemoveNode={handleRemoveNode}
+        />
+      )}
 
       {/* Add Component Modal */}
       <AddComponentModal

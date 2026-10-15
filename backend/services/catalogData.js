@@ -2,6 +2,56 @@
 
 const PROVIDER_CATALOG = [
   {
+    id: "hostinger",
+    name: "Hostinger Cloud & KVM",
+    category: "vps",
+    tier: "Smart NVMe Value",
+    startingPrice: 6.49,
+    pricingModel: "Introductory Discount + Transparent Renewal TCO (1-Yr / 3-Yr)",
+    description: "Ultra-fast KVM virtual servers with Gen4 NVMe storage, unthrottled 300Mb/s network ports, Kodee AI sysadmin assistant, and 1-click Docker/Coolify templates.",
+    strengths: [
+      "Pure NVMe SSD storage delivering up to 3,500 MB/s sequential read/write IOPS",
+      "Kodee AI Server Assistant for automated log inspection, Nginx config, and troubleshooting",
+      "1-Click OS templates: Docker, Coolify PaaS, CyberPanel, Ubuntu 24.04, Debian 12",
+      "Tier-3 Datacenters in Mumbai (India), Singapore, USA, UK, Lithuania, and France",
+      "Automated weekly backups included + instant snapshot rollbacks"
+    ],
+    risks: [
+      "Renewal prices kick in after initial billing contract period",
+      "Self-managed OS requires Docker/Coolify for automated PaaS application deployments",
+      "No native managed PostgreSQL cluster (mitigated by 1-click Coolify / Docker Compose)"
+    ],
+    computeOptions: [
+      { name: "Hostinger KVM 1", vcpu: "1 vCPU", ram: "4 GiB", storage: "50 GB NVMe", bandwidth: "4 TB Transfer (300 Mb/s)", monthlyUSD: 6.49, renewalUSD: 11.99, monthlyINR: 599, renewalINR: 999 },
+      { name: "Hostinger KVM 2 (Popular)", vcpu: "2 vCPU", ram: "8 GiB", storage: "100 GB NVMe", bandwidth: "8 TB Transfer (300 Mb/s)", monthlyUSD: 8.99, renewalUSD: 14.99, monthlyINR: 799, renewalINR: 1299 },
+      { name: "Hostinger KVM 4 (Scale)", vcpu: "4 vCPU", ram: "16 GiB", storage: "200 GB NVMe", bandwidth: "16 TB Transfer (300 Mb/s)", monthlyUSD: 12.99, renewalUSD: 28.99, monthlyINR: 1099, renewalINR: 2499 },
+      { name: "Hostinger KVM 8 (Powerhouse)", vcpu: "8 vCPU", ram: "32 GiB", storage: "400 GB NVMe", bandwidth: "32 TB Transfer (300 Mb/s)", monthlyUSD: 25.99, renewalUSD: 49.99, monthlyINR: 2199, renewalINR: 4199 },
+      { name: "Cloud Startup", vcpu: "2 vCPU", ram: "3 GiB", storage: "200 GB NVMe", bandwidth: "Unlimited", monthlyUSD: 9.99, renewalUSD: 19.99, monthlyINR: 799, renewalINR: 1599 },
+      { name: "Cloud Professional", vcpu: "4 vCPU", ram: "6 GiB", storage: "250 GB NVMe", bandwidth: "Unlimited", monthlyUSD: 14.99, renewalUSD: 32.99, monthlyINR: 1199, renewalINR: 2699 },
+      { name: "Cloud Enterprise", vcpu: "6 vCPU", ram: "12 GiB", storage: "300 GB NVMe", bandwidth: "Unlimited", monthlyUSD: 29.99, renewalUSD: 54.99, monthlyINR: 2299, renewalINR: 4599 }
+    ],
+    databaseOptions: [
+      { name: "PostgreSQL Container on NVMe (Docker / Coolify)", monthlyUSD: 0.00 },
+      { name: "Managed MariaDB/MySQL (via hPanel Cloud)", monthlyUSD: 0.00 }
+    ],
+    egressRate: 0.0001,
+    egressIncludedGB: 8192,
+    managed: false,
+    compliance: false,
+    regions: ["india", "us", "europe", "global"],
+    officialUrl: "https://www.hostinger.com/vps-hosting",
+    pricingStatus: "verified",
+    lastVerifiedDate: "2026-10-15",
+    assumptions: "Introductory pricing based on 12/24/48-month terms; renewal rates published openly. Includes Mumbai and Singapore datacenters.",
+    specialPrimitives: {
+      aiAssistant: "Kodee AI Server Assistant (terminal prompts, issue diagnostics, Nginx tuning)",
+      osTemplates: ["Docker on Ubuntu 24.04", "Coolify PaaS", "CyberPanel", "Debian 12", "AlmaLinux 9"],
+      backupInfo: "Automated weekly backups included at zero charge; manual snapshots $1.99/mo",
+      datacenters: ["Mumbai (India - Asia South)", "Singapore (Asia East)", "Paris (France)", "Vilnius (Lithuania)", "Phoenix (USA)", "São Paulo (Brazil)"],
+      tcoDiscountNote: "Save up to 68% over 3-year TCO compared to AWS EC2 t4g/m6g with equivalent RAM."
+    }
+  },
+  {
     id: "aws",
     name: "Amazon Web Services",
     category: "hyperscaler",

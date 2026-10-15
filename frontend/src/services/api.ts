@@ -150,5 +150,22 @@ export const api = {
       method: "POST",
       body: JSON.stringify(reportData)
     });
+  },
+
+  // Weekly Pricing Sync & Changes Tracker
+  getPricingSyncStatus: async (): Promise<{ success: boolean; data: any }> => {
+    return request("/providers/sync-status");
+  },
+
+  triggerPricingSync: async (): Promise<{ success: boolean; syncState: any; changesCount: number }> => {
+    return request("/providers/sync-now", {
+      method: "POST"
+    });
+  },
+
+  getWeeklyPricingChanges: async (filter?: string): Promise<{ success: boolean; count: number; changes: any[]; lastSyncedAt: string }> => {
+    const query = filter && filter !== "all" ? `?filter=${encodeURIComponent(filter)}` : "";
+    return request(`/providers/weekly-changes${query}`);
   }
 };
+

@@ -9,3 +9,4 @@ frontend/dist/
 test-results/
 playwright-report/
 .playwright/
+*.timestamp-*.mjs

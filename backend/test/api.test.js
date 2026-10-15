@@ -219,4 +219,38 @@ describe("CloudBlueprint Backend API Integration", () => {
     });
     assert.strictEqual(authRes.status, 200);
   });
+
+  test("Weekly Pricing Sync: GET sync-status, POST sync-now, GET weekly-changes", async () => {
+    // 1. GET sync-status
+    const statusRes = await fetch(`${BASE_URL}/api/providers/sync-status`);
+    assert.strictEqual(statusRes.status, 200);
+    const statusData = await statusRes.json();
+    assert.strictEqual(statusData.success, true);
+    assert.ok(statusData.data.lastSyncedAt);
+    assert.ok(statusData.data.officialPricingUrls.hostinger);
+    assert.ok(statusData.data.officialPricingUrls.aws);
+    assert.ok(statusData.data.officialPricingUrls.cloudflare);
+
+    // 2. POST sync-now
+    const syncRes = await fetch(`${BASE_URL}/api/providers/sync-now`, {
+      method: "POST"
+    });
+    assert.strictEqual(syncRes.status, 200);
+    const syncData = await syncRes.json();
+    assert.strictEqual(syncData.success, true);
+    assert.ok(syncData.changesCount > 0);
+
+    // 3. GET weekly-changes
+    const changesRes = await fetch(`${BASE_URL}/api/providers/weekly-changes`);
+    assert.strictEqual(changesRes.status, 200);
+    const changesData = await changesRes.json();
+    assert.strictEqual(changesData.success, true);
+    assert.ok(changesData.changes.length >= 10);
+    // Verify Hostinger, AWS, and Cloudflare changes exist
+    const providersInChanges = changesData.changes.map(c => c.providerId);
+    assert.ok(providersInChanges.includes("hostinger"));
+    assert.ok(providersInChanges.includes("aws"));
+    assert.ok(providersInChanges.includes("cloudflare"));
+  });
 });
+

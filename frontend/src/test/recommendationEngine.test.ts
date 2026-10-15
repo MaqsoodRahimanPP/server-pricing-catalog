@@ -22,12 +22,13 @@ const baseReq: Requirements = {
 };
 
 describe("Recommendation Engine", () => {
-  it("returns three distinct transparent recommendation tiers", () => {
+  it("returns distinct transparent recommendation tiers", () => {
     const { tiers } = generateClientRecommendations(baseReq);
 
-    expect(tiers).toHaveLength(3);
+    expect(tiers.length).toBeGreaterThanOrEqual(3);
     const tierIds = tiers.map(t => t.tierId);
     expect(tierIds).toContain("budget");
+    expect(tierIds).toContain("hostinger");
     expect(tierIds).toContain("balanced");
     expect(tierIds).toContain("enterprise");
   });
@@ -44,20 +45,37 @@ describe("Recommendation Engine", () => {
     expect(budgetTier?.eligibilityReason).toContain("compliance");
   });
 
-  it("applies budget constraint: selects Ultra-Budget when budget < $25", () => {
+  it("applies budget constraint: selects Ultra-Budget when budget < $10", () => {
     const { bestFitTierId } = generateClientRecommendations({
       ...baseReq,
-      budgetUSD: 15
+      budgetUSD: 8
     });
 
     expect(bestFitTierId).toBe("budget");
   });
 
-  it("selects Balanced Value for standard managed SaaS requirements", () => {
-    const { bestFitTierId, tiers } = generateClientRecommendations(baseReq);
+  it("selects Balanced Value for managed cloud at scale (>= 50k users)", () => {
+    const { bestFitTierId, tiers } = generateClientRecommendations({
+      ...baseReq,
+      users: 60000,
+      ops: "managed"
+    });
 
     expect(bestFitTierId).toBe("balanced");
     const balancedTier = tiers.find(t => t.tierId === "balanced");
     expect(balancedTier?.isBestFit).toBe(true);
   });
+
+  it("selects Hostinger Smart NVMe as prime value tier for modern startups", () => {
+    const { bestFitTierId, tiers } = generateClientRecommendations({
+      ...baseReq,
+      users: 10000,
+      budgetUSD: 75
+    });
+
+    expect(bestFitTierId).toBe("hostinger");
+    const hostingerTier = tiers.find(t => t.tierId === "hostinger");
+    expect(hostingerTier?.isBestFit).toBe(true);
+  });
 });
+

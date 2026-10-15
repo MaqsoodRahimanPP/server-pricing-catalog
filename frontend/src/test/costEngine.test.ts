@@ -55,8 +55,10 @@ describe("Cost Calculation Engine", () => {
 
     expect(inrResult.exchangeRate).toBe(CURRENCY_RATES.INR);
     expect(eurResult.exchangeRate).toBe(CURRENCY_RATES.EUR);
-    expect(inrResult.formatted.totalMonthly).toContain("INR");
-    expect(eurResult.formatted.totalMonthly).toContain("EUR");
+    expect(inrResult.currency).toBe("INR");
+    expect(inrResult.formatted.totalMonthly).toContain("₹");
+    expect(eurResult.currency).toBe("EUR");
+    expect(eurResult.formatted.totalMonthly).toContain("€");
   });
 
   it("identifies major cost drivers sorted in descending order", () => {

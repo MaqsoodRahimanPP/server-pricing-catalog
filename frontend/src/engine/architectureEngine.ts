@@ -1,8 +1,8 @@
-import { ArchitectureGraph, ArchitectureNode, ArchitectureEdge, Requirements } from "../types";
+import { ArchitectureGraph, ArchitectureNode, ArchitectureEdge, Requirements, TierId } from "../types";
 
 export function generateClientArchitecture(
   requirements: Requirements,
-  selectedTier: "budget" | "balanced" | "enterprise" = "balanced"
+  selectedTier: TierId = "hostinger"
 ): ArchitectureGraph {
   const {
     users = 10000,
@@ -10,34 +10,67 @@ export function generateClientArchitecture(
     database = "postgres",
     availability = "standard",
     stack = "node",
-    projectType = "saas"
+    projectType = "saas",
+    region = "india",
+    peakRps = 500
   } = requirements;
 
   const isHA = availability === "ha" || selectedTier === "enterprise";
 
-  const tierMeta = {
+  const tierMetaMap: Record<TierId, {
+    provider: string;
+    compute: string;
+    db: string;
+    lb: string;
+    storage: string;
+    waf: string;
+    regionBadge: string;
+  }> = {
     budget: {
-      provider: "Hetzner / Contabo",
-      compute: "Docker App Container",
-      db: database === "postgres" ? "Self-hosted PostgreSQL" : "No Database",
-      lb: nodes > 1 ? "Traefik Reverse Proxy" : "Direct Port Binding",
-      storage: "Cloudflare R2 Object Storage"
+      provider: "Contabo / Hetzner",
+      compute: "Docker Container (VPS S / CX22)",
+      db: database === "postgres" ? "Self-hosted PostgreSQL (WAL on disk)" : "No Database",
+      lb: nodes > 1 ? "Traefik Reverse Proxy" : "Direct Port 443 Binding",
+      storage: "Cloudflare R2 Object Storage",
+      waf: "Cloudflare Free WAF & SSL",
+      regionBadge: region === "europe" ? "Nuremberg / Falkenstein" : "Frankfurt / US Central"
+    },
+    hostinger: {
+      provider: "Hostinger KVM + Coolify",
+      compute: `Hostinger KVM (${nodes}x) + Coolify PaaS`,
+      db: database === "postgres" ? "PostgreSQL on Gen4 NVMe (Containerized)" : "No Database",
+      lb: "Traefik / Coolify Automated Reverse Proxy",
+      storage: "Cloudflare R2 + Hostinger Automated Snapshots",
+      waf: "Edge WAF + Kodee AI Security Monitor",
+      regionBadge: region === "india" ? "Mumbai, IN (Asia South)" : region === "europe" ? "Vilnius, LT (EU)" : "Phoenix, AZ (US)"
     },
     balanced: {
       provider: "DigitalOcean / Linode",
-      compute: "App Droplet Cluster",
-      db: database === "postgres" ? "Managed PostgreSQL (VPC)" : "No Database",
-      lb: "Cloud Load Balancer",
-      storage: "DO Spaces (S3-Compatible)"
+      compute: "App Droplet Cluster (2-4 vCPU)",
+      db: database === "postgres" ? "Managed PostgreSQL (Private VPC Standby)" : "No Database",
+      lb: "DO Cloud Load Balancer (Health Checked)",
+      storage: "DO Spaces (S3-Compatible)",
+      waf: "Cloudflare Pro WAF & DDoS Shield",
+      regionBadge: region === "india" ? "Bangalore (BLR1)" : region === "europe" ? "Frankfurt (FRA1)" : "New York (NYC3)"
     },
     enterprise: {
       provider: "Amazon Web Services (AWS)",
-      compute: "EC2 / ECS Auto-Scaling Cluster",
-      db: database === "postgres" ? "AWS RDS Multi-AZ PostgreSQL" : "No Database",
+      compute: "AWS EC2 / ECS Auto-Scaling Cluster",
+      db: database === "postgres" ? "AWS RDS Multi-AZ PostgreSQL (Sync Standby)" : "No Database",
       lb: "AWS Application Load Balancer (ALB)",
-      storage: "Amazon S3 Standard Bucket"
+      storage: "Amazon S3 Standard (SSE-KMS Encrypted)",
+      waf: "AWS WAF Managed Rule Groups",
+      regionBadge: region === "india" ? "ap-south-1 (Mumbai)" : region === "europe" ? "eu-central-1 (Frankfurt)" : "us-east-1 (N. Virginia)"
     }
-  }[selectedTier];
+  };
+
+  const tierMeta = tierMetaMap[selectedTier] || tierMetaMap.hostinger;
+
+  // Real-time calculated traffic metrics based on users & peakRps
+  const calcRps = peakRps || Math.max(50, Math.round(users * 0.05));
+  const cdnCachedRps = Math.round(calcRps * 0.88); // 88% cached at edge
+  const originRps = Math.max(10, calcRps - cdnCachedRps);
+  const dbRps = Math.round(originRps * 0.65);
 
   const nodesList: ArchitectureNode[] = [];
   const edgesList: ArchitectureEdge[] = [];
@@ -47,7 +80,7 @@ export function generateClientArchitecture(
     {
       id: "boundary-public",
       title: "Public Internet & Edge Zone",
-      description: "Public edge with Anycast routing, DDoS mitigation, and TLS termination",
+      description: "Anycast routing, DDoS mitigation, TLS termination, and Edge caching",
       zone: "public",
       color: "#3b82f6"
     },
@@ -67,35 +100,41 @@ export function generateClientArchitecture(
     }
   ];
 
-  // 1. Users
+  // 1. Users Node
   nodesList.push({
     id: "node-users",
     type: "default",
     category: "client",
-    position: { x: 40, y: 160 },
+    position: { x: 30, y: 160 },
     data: {
-      title: "End Users",
-      subtitle: `${users.toLocaleString()} MAU · Web & Mobile`,
+      title: "Global End Users",
+      subtitle: `${users.toLocaleString()} MAU · ${tierMeta.regionBadge}`,
       zone: "public",
       status: "active",
-      provider: "Global Internet",
-      icon: "Users"
+      provider: "Internet Users",
+      icon: "Users",
+      nodeType: "cdn",
+      liveRps: calcRps,
+      liveLatencyMs: 14
     }
   });
 
-  // 2. Cloudflare CDN
+  // 2. CDN Edge
   nodesList.push({
     id: "node-cdn",
     type: "default",
     category: "edge",
-    position: { x: 230, y: 160 },
+    position: { x: 220, y: 160 },
     data: {
-      title: "Cloudflare Edge",
-      subtitle: "Global Anycast DNS & Edge Caching",
+      title: "Cloudflare Edge CDN",
+      subtitle: "Anycast DNS · 88% Edge Cache Hit",
       zone: "public",
       status: "active",
-      provider: "Cloudflare",
-      icon: "Globe"
+      provider: "Cloudflare Edge",
+      icon: "Globe",
+      nodeType: "cdn",
+      liveRps: calcRps,
+      liveLatencyMs: 12
     }
   });
 
@@ -103,8 +142,9 @@ export function generateClientArchitecture(
     id: "e-users-cdn",
     source: "node-users",
     target: "node-cdn",
-    label: "HTTPS (443)",
-    animated: true
+    label: `${calcRps} RPS · 14ms`,
+    animated: true,
+    liveMetrics: { rps: calcRps, latencyMs: 14, protocol: "HTTPS / HTTP3" }
   });
 
   // 3. WAF
@@ -112,14 +152,17 @@ export function generateClientArchitecture(
     id: "node-waf",
     type: "default",
     category: "security",
-    position: { x: 420, y: 160 },
+    position: { x: 410, y: 160 },
     data: {
-      title: selectedTier === "enterprise" ? "AWS WAF" : "Edge WAF & Rate Limiting",
-      subtitle: "OWASP Top 10 · Bot & DDoS Mitigation",
+      title: tierMeta.waf,
+      subtitle: "Token Bucket Rate Limiting · OWASP Top 10",
       zone: "public",
       status: "active",
       provider: tierMeta.provider,
-      icon: "ShieldCheck"
+      icon: "ShieldCheck",
+      nodeType: "waf",
+      liveRps: calcRps,
+      liveLatencyMs: 2
     }
   });
 
@@ -127,8 +170,9 @@ export function generateClientArchitecture(
     id: "e-cdn-waf",
     source: "node-cdn",
     target: "node-waf",
-    label: "Filtered Traffic",
-    animated: true
+    label: "Filtered TLS",
+    animated: true,
+    liveMetrics: { rps: calcRps, latencyMs: 2, protocol: "mTLS" }
   });
 
   // 4. Load Balancer
@@ -136,14 +180,17 @@ export function generateClientArchitecture(
     id: "node-lb",
     type: "default",
     category: "networking",
-    position: { x: 610, y: 160 },
+    position: { x: 600, y: 160 },
     data: {
       title: tierMeta.lb,
-      subtitle: nodes > 1 ? `Distributes to ${nodes} instances` : "SSL termination gateway",
+      subtitle: nodes > 1 ? `Weighted Round Robin to ${nodes} nodes` : "SSL Termination Reverse Proxy",
       zone: "app-subnet",
       status: "active",
       provider: tierMeta.provider,
-      icon: "Scale"
+      icon: "Scale",
+      nodeType: "lb",
+      liveRps: originRps,
+      liveLatencyMs: 5
     }
   });
 
@@ -151,8 +198,9 @@ export function generateClientArchitecture(
     id: "e-waf-lb",
     source: "node-waf",
     target: "node-lb",
-    label: "Clean HTTPS",
-    animated: true
+    label: `${originRps} Origin RPS`,
+    animated: true,
+    liveMetrics: { rps: originRps, latencyMs: 5, protocol: "TCP 443" }
   });
 
   // 5. Compute Application Nodes
@@ -160,16 +208,19 @@ export function generateClientArchitecture(
     id: "node-compute",
     type: "default",
     category: "compute",
-    position: { x: 810, y: 160 },
+    position: { x: 790, y: 160 },
     data: {
       title: tierMeta.compute,
-      subtitle: `${nodes} node(s) · ${stack} runtime`,
+      subtitle: `${nodes} instance(s) · ${stack} runtime ${selectedTier === "hostinger" ? "· Kodee AI Assistant" : ""}`,
       zone: "app-subnet",
       status: "active",
       provider: tierMeta.provider,
       icon: "Server",
       instances: nodes,
-      isHA
+      isHA,
+      nodeType: "app",
+      liveRps: originRps,
+      liveLatencyMs: 24
     }
   });
 
@@ -177,8 +228,9 @@ export function generateClientArchitecture(
     id: "e-lb-compute",
     source: "node-lb",
     target: "node-compute",
-    label: "Internal HTTP",
-    animated: true
+    label: `${originRps} RPS · 24ms`,
+    animated: true,
+    liveMetrics: { rps: originRps, latencyMs: 24, protocol: "HTTP/1.1 (Keep-Alive)" }
   });
 
   // 6. PgBouncer Connection Pooler
@@ -188,14 +240,17 @@ export function generateClientArchitecture(
       id: "node-pooler",
       type: "default",
       category: "database",
-      position: { x: 1000, y: 160 },
+      position: { x: 980, y: 160 },
       data: {
-        title: "PgBouncer Connection Pool",
-        subtitle: "Transaction Pooling (Limits backend conns)",
+        title: "PgBouncer Connection Pooler",
+        subtitle: "Transaction Pooling (Limits backend to 15 conns)",
         zone: "data-subnet",
         status: "active",
-        provider: "Open Source / Managed",
-        icon: "Layers"
+        provider: selectedTier === "hostinger" ? "Containerized PgBouncer (Coolify)" : "PgBouncer / Managed Proxy",
+        icon: "Layers",
+        nodeType: "pgbouncer",
+        liveRps: dbRps,
+        liveLatencyMs: 3
       }
     });
 
@@ -204,7 +259,8 @@ export function generateClientArchitecture(
       source: "node-compute",
       target: "node-pooler",
       label: "TCP 6432 (Pool)",
-      animated: true
+      animated: true,
+      liveMetrics: { rps: dbRps, latencyMs: 3, protocol: "Postgres Protocol" }
     });
 
     dbTargetId = "node-pooler";
@@ -216,15 +272,22 @@ export function generateClientArchitecture(
       id: "node-db",
       type: "default",
       category: "database",
-      position: { x: 1200, y: 160 },
+      position: { x: 1180, y: 160 },
       data: {
         title: tierMeta.db,
-        subtitle: isHA ? "Multi-AZ Synchronous Standby" : "Single Instance (Automated Backups)",
+        subtitle: selectedTier === "hostinger"
+          ? "Gen4 NVMe (3,500 MB/s IOPS) · Weekly Backups"
+          : isHA
+          ? "Multi-AZ Synchronous Standby Failover"
+          : "Single Node Instance · Daily Backups",
         zone: "data-subnet",
         status: "active",
         provider: tierMeta.provider,
         icon: "Database",
-        isHA
+        isHA,
+        nodeType: "postgres",
+        liveRps: dbRps,
+        liveLatencyMs: 6
       }
     });
 
@@ -232,8 +295,9 @@ export function generateClientArchitecture(
       id: "e-pooler-db",
       source: dbTargetId,
       target: "node-db",
-      label: "TLS 5432 (Private)",
-      animated: true
+      label: `${dbRps} QPS · 6ms`,
+      animated: true,
+      liveMetrics: { rps: dbRps, latencyMs: 6, protocol: "TCP 5432 (TLS)" }
     });
   }
 
@@ -243,14 +307,17 @@ export function generateClientArchitecture(
       id: "node-cache",
       type: "default",
       category: "cache",
-      position: { x: 1000, y: 280 },
+      position: { x: 980, y: 280 },
       data: {
         title: "Redis In-Memory Cache",
-        subtitle: "Session Store & Background Queues",
+        subtitle: "Session Store · SkipList ZSET Rate Limiting",
         zone: "data-subnet",
         status: "active",
         provider: tierMeta.provider,
-        icon: "Zap"
+        icon: "Zap",
+        nodeType: "redis",
+        liveRps: Math.round(originRps * 1.2),
+        liveLatencyMs: 1
       }
     });
 
@@ -258,8 +325,9 @@ export function generateClientArchitecture(
       id: "e-compute-cache",
       source: "node-compute",
       target: "node-cache",
-      label: "TCP 6379",
-      animated: true
+      label: `${Math.round(originRps * 1.2)} QPS · 1ms`,
+      animated: true,
+      liveMetrics: { rps: Math.round(originRps * 1.2), latencyMs: 1, protocol: "TCP 6379 (RESP)" }
     });
   }
 
@@ -268,14 +336,17 @@ export function generateClientArchitecture(
     id: "node-storage",
     type: "default",
     category: "storage",
-    position: { x: 810, y: 280 },
+    position: { x: 790, y: 280 },
     data: {
       title: tierMeta.storage,
-      subtitle: "Encrypted User Uploads & Backups",
+      subtitle: "Encrypted User Uploads · S3 Presigned URLs",
       zone: "app-subnet",
       status: "active",
       provider: tierMeta.provider,
-      icon: "HardDrive"
+      icon: "HardDrive",
+      nodeType: "s3",
+      liveRps: Math.max(5, Math.round(calcRps * 0.08)),
+      liveLatencyMs: 18
     }
   });
 
@@ -284,8 +355,39 @@ export function generateClientArchitecture(
     source: "node-compute",
     target: "node-storage",
     label: "S3 API (HTTPS)",
-    animated: false
+    animated: false,
+    liveMetrics: { rps: Math.max(5, Math.round(calcRps * 0.08)), latencyMs: 18, protocol: "REST / HTTPS" }
   });
+
+  // 10. Background Message Queue (if e-commerce, food, pos, saas)
+  if (["ecommerce", "food", "pos", "saas"].includes(projectType)) {
+    nodesList.push({
+      id: "node-queue",
+      type: "default",
+      category: "queue",
+      position: { x: 600, y: 280 },
+      data: {
+        title: "Async Task Queue (BullMQ)",
+        subtitle: "Ring Buffer Dispatches · DLQ Poison Pill Protection",
+        zone: "app-subnet",
+        status: "active",
+        provider: tierMeta.provider,
+        icon: "Network",
+        nodeType: "queue",
+        liveRps: Math.max(10, Math.round(originRps * 0.3)),
+        liveLatencyMs: 4
+      }
+    });
+
+    edgesList.push({
+      id: "e-compute-queue",
+      source: "node-compute",
+      target: "node-queue",
+      label: "Enqueue Task",
+      animated: true,
+      liveMetrics: { rps: Math.max(10, Math.round(originRps * 0.3)), latencyMs: 4, protocol: "Async Worker" }
+    });
+  }
 
   return {
     template: projectType,
@@ -298,14 +400,16 @@ export function generateClientArchitecture(
       {
         type: "security",
         severity: "info",
-        message: "Database is placed in the Isolated Data Subnet with zero direct public ingress."
+        message: "Database is placed in the Isolated Data Subnet with zero direct public internet ingress."
       },
       {
-        type: "reliability",
+        type: "performance",
         severity: "success",
-        message: `Application Load Balancer health-checks and balances across ${nodes} instances.`
+        message: selectedTier === "hostinger"
+          ? "Hostinger Gen4 NVMe disk delivers up to 3,500 MB/s sequential IOPS, preventing database I/O bottlenecks."
+          : `Load Balancer dynamically health-checks and balances across ${nodes} instances.`
       }
     ],
-    summary: `${tierMeta.provider} topology featuring ${nodesList.length} architecture components across 3 security zones.`
+    summary: `${tierMeta.provider} topology featuring ${nodesList.length} architecture components across 3 security zones in ${tierMeta.regionBadge}.`
   };
 }
