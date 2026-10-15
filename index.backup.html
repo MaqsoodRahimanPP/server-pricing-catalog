@@ -1,0 +1,142 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Compare cloud hosting, VPS and server pricing for development, testing and production.">
+  <title>CloudRate — Server Pricing Catalog</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="#">
+      <span class="brand-icon">C</span>
+      CloudRate<span class="brand-dot">.</span>
+    </a>
+    <nav>
+      <a href="#providers">Providers</a>
+      <a href="#calculator">Calculator</a>
+      <a href="#guide">Guide</a>
+    </nav>
+    <span class="live-status"><span></span> Pricing estimates</span>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="eyebrow">CLOUD COST INTELLIGENCE</div>
+      <h1>Find the right server.<br><span>Know your costs.</span></h1>
+      <p>Compare cloud providers, server specifications and estimated hosting costs for your next project.</p>
+      <div class="hero-actions">
+        <a class="primary-btn" href="#providers">Explore pricing <span>↗</span></a>
+        <a class="secondary-btn" href="#calculator">Estimate my cost</a>
+      </div>
+      <div class="hero-note">For developers · DevOps engineers · Startups · Businesses</div>
+    </section>
+
+    <section class="toolbar" id="providers">
+      <div>
+        <div class="section-kicker">COMPARE HOSTING</div>
+        <h2>Server pricing catalog</h2>
+        <p class="muted">Compare starting plans and choose what fits your workload.</p>
+      </div>
+      <div class="controls">
+        <label>
+          Currency
+          <select id="currency">
+            <option value="USD">USD ($)</option>
+            <option value="INR">INR (₹)</option>
+          </select>
+        </label>
+        <label>
+          Billing view
+          <select id="billing">
+            <option value="monthly">Monthly</option>
+            <option value="hourly">Hourly estimate</option>
+          </select>
+        </label>
+      </div>
+    </section>
+
+    <section class="filters">
+      <label class="search-box">
+        <span>⌕</span>
+        <input id="search" type="search" placeholder="Search providers or server plans...">
+      </label>
+      <div class="filter-buttons" id="filters">
+        <button class="filter active" data-filter="All">All providers</button>
+        <button class="filter" data-filter="VPS">VPS</button>
+        <button class="filter" data-filter="Frontend">Frontend</button>
+        <button class="filter" data-filter="Production">Production</button>
+        <button class="filter" data-filter="Development">Development</button>
+      </div>
+    </section>
+
+    <div class="results-line">
+      <span id="result-count">4 providers</span>
+      <span class="muted">Starting estimates · Verify before purchase</span>
+    </div>
+
+    <section class="provider-grid" id="provider-grid" aria-live="polite"></section>
+
+    <section class="calculator" id="calculator">
+      <div class="calculator-copy">
+        <div class="section-kicker">COST PLANNER</div>
+        <h2>Estimate your monthly server cost</h2>
+        <p>Calculate a simple estimate based on server count and operating hours. Storage, bandwidth, taxes and other extras may cost more.</p>
+        <a href="https://calculator.aws/" target="_blank" rel="noopener noreferrer">Open AWS Pricing Calculator ↗</a>
+      </div>
+      <div class="calculator-form">
+        <label>Provider
+          <select id="calc-provider"></select>
+        </label>
+        <label>Number of servers
+          <input id="server-count" type="number" min="1" max="100" value="1">
+        </label>
+        <label>Hours per month
+          <input id="server-hours" type="number" min="1" max="744" value="730">
+        </label>
+        <div class="estimate-result">
+          <span>Estimated compute cost</span>
+          <strong id="estimate-total">$6.00</strong>
+          <small id="estimate-note">Excludes additional charges.</small>
+        </div>
+      </div>
+    </section>
+
+    <section class="guide" id="guide">
+      <div class="section-kicker">CHOOSE WITH CONFIDENCE</div>
+      <h2>Which hosting option is right for you?</h2>
+      <div class="guide-grid">
+        <article>
+          <span class="guide-number">01</span>
+          <h3>Frontend websites</h3>
+          <p>Choose managed frontend hosting for Next.js, previews, automatic deployments and CDN delivery.</p>
+        </article>
+        <article>
+          <span class="guide-number">02</span>
+          <h3>Docker and QA</h3>
+          <p>Choose a VPS with enough RAM and CPU for your containers, databases, CI jobs and test workloads.</p>
+        </article>
+        <article>
+          <span class="guide-number">03</span>
+          <h3>Production workloads</h3>
+          <p>Evaluate backups, availability, monitoring, security, bandwidth and scaling—not just the server price.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="disclaimer">
+      <strong>Pricing disclaimer</strong>
+      <p>Prices shown are illustrative starting estimates, not guaranteed or live quotes. Promotions, regions, operating systems, usage, taxes, storage, bandwidth and IP addresses can change the final bill. Verify current prices on each provider's official website before purchasing. INR conversion uses an adjustable example exchange rate, not a live exchange rate.</p>
+    </section>
+  </main>
+
+  <footer>
+    <a class="brand" href="#"><span class="brand-icon">C</span> CloudRate<span class="brand-dot">.</span></a>
+    <span>Server pricing comparison for smarter infrastructure decisions.</span>
+    <span>© <span id="year"></span> CloudRate</span>
+  </footer>
+</body>
+</html>

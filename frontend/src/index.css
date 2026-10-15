@@ -1,0 +1,83 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-slate-950 text-slate-100 font-sans;
+  }
+}
+
+/* React Flow Canvas Enhancements */
+.react-flow__renderer {
+  background-color: #0b0f19 !important;
+}
+
+.react-flow__node {
+  border-radius: 0.75rem;
+  transition: all 0.2s ease;
+}
+
+.react-flow__node.selected {
+  box-shadow: 0 0 0 2px #6366f1, 0 10px 25px -5px rgba(99, 102, 241, 0.4) !important;
+}
+
+.react-flow__handle {
+  width: 10px;
+  height: 10px;
+  background-color: #6366f1;
+  border: 2px solid #0f172a;
+}
+
+.react-flow__edge-path {
+  stroke: #64748b;
+  stroke-width: 2;
+}
+
+.react-flow__edge.animated path {
+  stroke: #818cf8;
+  stroke-dasharray: 5;
+  animation: react-flow__dash 1s linear infinite;
+}
+
+@keyframes react-flow__dash {
+  from {
+    stroke-dashoffset: 10;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #090d16;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #1e293b;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #334155;
+}
+
+/* Print Styles for PDF Export */
+@media print {
+  body {
+    background: white !important;
+    color: black !important;
+  }
+  .no-print {
+    display: none !important;
+  }
+  .print-only {
+    display: block !important;
+  }
+}
